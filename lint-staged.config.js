@@ -1,3 +1,3 @@
 export default {
-    '*.ts(x)': (stagedFiles) => [`eslint .`, `prettier --write ${stagedFiles.join(' ')}`],
+    '**/*.ts(x)': (stagedFiles) => [`next lint`, `tsc --noemit`, `prettier --write ${stagedFiles.join(' ')}`],
   }

@@ -17,7 +17,7 @@ import {
 } from "./ui/tooltip"
 import { useEffect, useState } from "react"
 
-export function ModeToggle(btn) {
+export function ModeToggle() {
   const { setTheme, theme } = useTheme()
   const [isMounted, setIsMounted] = useState(false)
 

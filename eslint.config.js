@@ -13,10 +13,10 @@ import unused from "eslint-plugin-unused-imports"
  *
  * @type {import("eslint").Linter.Config}
  * */
-const eslintConfig = [
+export default tseslint.config(
   js.configs.recommended,
   eslintConfigPrettier,
-  ...tseslint.configs.recommended,
+  tseslint.configs.recommended,
   {
     ...pluginReact.configs.flat.recommended,
     languageOptions: {
@@ -47,12 +47,11 @@ const eslintConfig = [
       // React scope no longer necessary with new JSX transform.
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "warn",
-      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
       "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-require-imports": "error",
       "unused-imports/no-unused-imports": "warn",
     },
   },
-]
+)
 
-export default eslintConfig
