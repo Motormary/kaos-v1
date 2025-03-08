@@ -6,7 +6,7 @@ import pluginReactHooks from "eslint-plugin-react-hooks"
 import globals from "globals"
 import tseslint from "typescript-eslint"
 import onlyWarn from "eslint-plugin-only-warn"
-import unused from 'eslint-plugin-unused-imports'
+import unused from "eslint-plugin-unused-imports"
 
 /**
  * A custom ESLint configuration for libraries that use Next.js.

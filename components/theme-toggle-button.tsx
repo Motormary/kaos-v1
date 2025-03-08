@@ -1,59 +1,69 @@
 "use client"
 
-import { Monitor, Moon, MoonIcon, Sun, SunIcon } from "lucide-react"
+import { Monitor, MoonIcon, SunIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 
-import { Button } from "@/components/ui/button"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { AnimatePresence, motion } from "motion/react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip"
+import { useEffect, useState } from "react"
 
-export function ModeToggle() {
-  const { setTheme } = useTheme()
+export function ModeToggle(btn) {
+  const { setTheme, theme } = useTheme()
+  const [isMounted, setIsMounted] = useState(false)
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          className="fixed bottom-5 left-5 z-50 rounded-full"
-          variant="outline"
-          size="icon"
-        >
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="max-md:w-52">
-        <DropdownMenuItem
-          className="max-md:py-5 max-md:text-xl"
-          onClick={() => setTheme("light")}
-        >
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className="md:hidden" />
-        <DropdownMenuItem
-          className="max-md:py-5 max-md:text-xl"
-          onClick={() => setTheme("dark")}
-        >
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className="md:hidden" />
-        <DropdownMenuItem
-          className="max-md:py-5 max-md:text-xl"
-          onClick={() => setTheme("system")}
-        >
-          System
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (isMounted)
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild className="fixed bottom-3 left-4 z-50">
+            <button
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+              className="bg-secondary rounded-full border p-2 hover:cursor-pointer"
+            >
+              <AnimatePresence>
+                {theme === "light" ? (
+                  <motion.div
+                    key="sun"
+                    initial={{ opacity: 0, scale: 0, rotate: "180deg" }}
+                    animate={{ opacity: 1, scale: 1, rotate: "0deg" }}
+                    exit={{ opacity: 0, scale: 0, rotate: "180deg" }}
+                  >
+                    <MoonIcon className="fill-indigo-200 stroke-gray-700" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="moon"
+                    initial={{ opacity: 0, scale: 0, rotate: "180deg" }}
+                    animate={{ opacity: 1, scale: 1, rotate: "0deg" }}
+                    exit={{ opacity: 0, scale: 0, rotate: "180deg" }}
+                  >
+                    <SunIcon className="stroke-amber-200" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            {theme === "light" ? "Dark Mode" : "Light Mode"}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )
+  return null
 }
 
 /**  Accessible theme toggler for dropdown menu */
@@ -68,7 +78,7 @@ export function ThemeSwitch() {
           theme === "light"
             ? "bg-primary hover:bg-primary focus:bg-primary"
             : "hover:bg-primary/70 focus:bg-primary/70",
-          "group/light h-5 w-7 rounded-none rounded-l-full p-0 outline outline-1 transition-colors hover:cursor-pointer",
+          "group/light h-5 w-7 rounded-none rounded-l-full p-0 outline-1 transition-colors hover:cursor-pointer",
         )}
         onClick={(e) => {
           e.preventDefault()
@@ -92,7 +102,7 @@ export function ThemeSwitch() {
           theme === "system"
             ? "bg-primary hover:bg-primary focus:bg-primary"
             : "hover:bg-primary/70 focus:bg-primary/70",
-          "group/system h-5 w-7 rounded-none p-0 outline outline-1 transition-colors hover:cursor-pointer",
+          "group/system h-5 w-7 rounded-none p-0 outline-1 transition-colors hover:cursor-pointer",
         )}
         onClick={(e) => {
           e.preventDefault()
@@ -116,7 +126,7 @@ export function ThemeSwitch() {
           theme === "dark"
             ? "bg-primary hover:bg-primary focus:bg-primary"
             : "hover:bg-primary/70 focus:bg-primary/70",
-          "group/dark h-5 w-7 rounded-none rounded-r-full p-0 outline outline-1 transition-colors hover:cursor-pointer",
+          "group/dark h-5 w-7 rounded-none rounded-r-full p-0 outline-1 transition-colors hover:cursor-pointer",
         )}
         onClick={(e) => {
           e.preventDefault()
