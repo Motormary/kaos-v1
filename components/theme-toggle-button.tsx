@@ -34,7 +34,7 @@ export function ModeToggle() {
               onClick={() => setTheme(theme === "light" ? "dark" : "light")}
               className="bg-secondary rounded-full border p-2 hover:cursor-pointer"
             >
-              <AnimatePresence>
+              <AnimatePresence mode="popLayout">
                 {theme === "light" ? (
                   <motion.div
                     key="sun"
