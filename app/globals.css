@@ -12,7 +12,7 @@
 
   --animate-fade-up: up 1s ease;
   --animate-fade-half: fadeHalf 500ms ease;
-  --animate-pop: pop 200ms cubic-bezier(0.18, 0.67, 0.6, 1.22) forwards;
+  --animate-pop: pop 150ms cubic-bezier(0.18, 0.67, 0.6, 1.22) forwards;
 
   --transition-duration-1500: 1500ms;
   --transition-duration-2000: 2000ms;
@@ -83,7 +83,7 @@
       box-shadow: var(--box-shadow);
     }
     100% {
-      transform: translate3d(0, 0px, 0) scale(1.05);
+      transform: translate3d(10px, 10px, 0) scale(1.05);
       box-shadow:
         -1px 0 15px 0 rgba(34, 33, 81, 0.01),
         0px 15px 15px 0 rgba(34, 33, 81, 0.25);

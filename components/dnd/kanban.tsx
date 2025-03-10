@@ -11,7 +11,6 @@ import {
   DragOverEvent,
   DragOverlay,
   DragStartEvent,
-  DropAnimation,
   KeyboardSensor,
   MouseSensor,
   useDroppable,
@@ -27,7 +26,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { CircleCheck, CirclePause, CircleX, MousePointer2 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 const initialColumns = [
   {
@@ -97,13 +96,16 @@ type MessageProps = {
 }
 
 function msg(data: MessageProps) {
-  if (ws.readyState !== 1)
+  if (ws && ws?.readyState !== 1) {
     console.warn("Message not sent, readyState:", ws.readyState)
-  try {
-    const msg = JSON.stringify(data)
-    ws.send(msg)
-  } catch (e) {
-    console.log("Websocket request failed:", e)
+    return
+  } else {
+    try {
+      const msg = JSON.stringify(data)
+      ws.send(msg)
+    } catch (e) {
+      console.log("Websocket request failed:", e)
+    }
   }
 }
 
@@ -203,134 +205,129 @@ export default function DNDKIT() {
   //! -------------------------------WEBSOCKET START------------------------------------------
 
   const [users, setUsers] = useState<string[]>([])
+  const [connectionStatus, setConnectionStatus] = useState<
+    "pending" | "connected" | "closing" | "disconnected"
+  >("disconnected")
 
-  ws.onmessage = (event) => {
-    const {
-      type,
-      connect,
-      disconnect,
-      start,
-      drag,
-      drop,
-      cancel,
-      move,
-      x,
-      y,
-    }: MessageProps = JSON.parse(event.data)
-
-    const isConnected = users?.some(
-      (user) => user?.toLowerCase() === connect?.user?.toLowerCase(),
-    )
-
-    if (type === "connect") {
-      if (isConnected) {
-        return
-      }
-      console.info("Connecting user:", connect?.user)
-      setUsers((prev) => [...prev, connect?.user as string])
+  useEffect(() => {
+    switch (ws.readyState) {
+      case 0:
+        setConnectionStatus("pending")
+        break
+      case 1:
+        setConnectionStatus("connected")
+        break
+      case 2:
+        setConnectionStatus("closing")
+        break
+      default:
+        setConnectionStatus("disconnected")
+        break
     }
 
-    if (type === "disconnect") {
-      if (isConnected) {
-        setUsers((prev) => prev.filter((user) => user !== disconnect?.user))
-      }
-    }
+    const handleWebsocketMsg = (event: MessageEvent) => {
+      const {
+        type,
+        connect,
+        disconnect,
+        start,
+        drag,
+        drop,
+        cancel,
+        move,
+        x,
+        y,
+      }: MessageProps = JSON.parse(event.data)
 
-    if (type === "move") {
-      const mouse = document?.getElementById(move?.user as string)
-      if (mouse) {
-        const offsetX = (x ?? 0) - 3.5
-        const offsetY = (y ?? 0) - 3.5
-        mouse.style.left = `${offsetX}px`
-        mouse.style.top = `${offsetY}px`
-      } else {
-        console.error(
-          "Error in (move), missing parameters => mouseId:",
-          move?.user,
-          "x:",
-          x,
-          "y:",
-          y,
-        )
-        return
-      }
-    }
+      const isConnected = users?.some(
+        (user) => user?.toLowerCase() === connect?.user?.toLowerCase(),
+      )
 
-    if (type === "start") {
-      console.log("start")
-      const dragEl = document.getElementById(start?.itemId as string)
-      const isClone = document.getElementById(`${start?.itemId}-clone`)
-      if (!dragEl) {
-        console.error(
-          "Error in (drag): Missing params => id:",
-          start?.itemId,
-          "x:",
-          x,
-          "y:",
-          y,
-        )
-        return
+      if (type === "connect") {
+        if (isConnected) {
+          return
+        }
+        console.info("Connecting user:", connect?.user)
+        setUsers((prev) => [...prev, connect?.user as string])
       }
-      if (isClone) {
-        isClone.remove()
+
+      if (type === "disconnect") {
+        if (
+          users?.some(
+            (user) => user?.toLowerCase() === disconnect?.user?.toLowerCase(),
+          )
+        ) {
+          console.log("DISCONNECT AFK USER:", disconnect?.user)
+          setUsers((prev) => prev.filter((user) => user !== disconnect?.user))
+        }
       }
-      const rect = dragEl.getBoundingClientRect()
-      const clone = dragEl.cloneNode(true) as HTMLElement
-      dragEl.before(clone)
-      clone.classList.add("ghost")
-      clone.id = `${start?.itemId}-clone`
-      clone.style.width = `${rect.width}px`
-      clone.style.height = `${rect.height}px`
-      clone.style.position = `absolute`
-      clone.style.left = `${dragEl.offsetLeft}px`
-      clone.style.top = `${dragEl.offsetTop}px`
-      clone.style.zIndex = "49"
-      clone.style.transition = "scale 100ms ease"
-      clone.style.scale = "1.05"
-      clone.classList.add("shadow-xl")
-      clone.style.pointerEvents = "none"
-      dragEl.classList.add("opacity-10")
-    }
-    if (type === "drag") {
-      console.log("drag")
-      const cloneEl = document.getElementById(`${drag?.itemId}-clone`)
-      const dragEl = document.getElementById(drag?.itemId as string)
-      if (!cloneEl || !dragEl) return
-      const rect = dragEl.getBoundingClientRect()
-      const offsetX = rect.left + (x ?? 0)
-      const offsetY = rect.top + (y ?? 0)
-      cloneEl.style.left = `${offsetX}px` //! + (container).scrollX
-      cloneEl.style.top = `${offsetY + window.scrollY}px`
-    }
-    if (type === "cancel") {
-      console.log("cancel")
-      const dragEl = document.getElementById(cancel?.itemId as string)
-      const cloneEl = document.getElementById(`${cancel?.itemId}-clone`)
-      if (!dragEl || !cloneEl) {
-        console.error(
-          "Error in (cancel): Missing params => dragEl:",
-          drag?.itemId,
-        )
+
+      if (type === "move") {
+        const mouse = document?.getElementById(move?.user as string)
+        if (mouse) {
+          const offsetX = (x ?? 0) - 3.5
+          const offsetY = (y ?? 0) - 3.5
+          mouse.style.left = `${offsetX}px`
+          mouse.style.top = `${offsetY}px`
+        }
       }
-      cloneEl?.remove()
-      dragEl?.classList?.remove("opacity-10")
-    }
-    if (type === "drop") {
-      console.log("drop")
-      const dragEl = document.getElementById(drop?.itemId as string)
-      const cloneEl = document.getElementById(`${drop?.itemId}-clone`)
-      if (!dragEl) {
-        console.error(
-          "Error in (cancel): Missing params => dragEl:",
-          drag?.itemId,
-        )
+
+      if (type === "start") {
+        console.log("start")
+        const dragEl = document.getElementById(start?.itemId as string)
+        const isClone = document.getElementById(`${start?.itemId}-clone`)
+        if (!dragEl) {
+          console.error(
+            "Error in (drag): Missing params => id:",
+            start?.itemId,
+            "x:",
+            x,
+            "y:",
+            y,
+          )
+          return
+        }
+        if (isClone) {
+          isClone.remove()
+        }
+        const rect = dragEl.getBoundingClientRect()
+        const clone = dragEl.cloneNode(true) as HTMLElement
+        dragEl.before(clone)
+        clone.classList.add("ghost")
+        clone.id = `${start?.itemId}-clone`
+        clone.style.width = `${rect.width}px`
+        clone.style.height = `${rect.height}px`
+        clone.style.position = `absolute`
+        clone.style.left = `${dragEl.offsetLeft}px`
+        clone.style.top = `${dragEl.offsetTop}px`
+        clone.style.zIndex = "49"
+        // clone.style.transition = "scale 100ms ease"
+        // clone.style.scale = "1.05"
+        clone.classList.add("shadow-xl", "animate-pop")
+        clone.style.pointerEvents = "none"
+        dragEl.classList.add("opacity-50")
       }
-      dragEl?.classList.remove("opacity-10")
-      setCols(drop?.newState as ColumnProps[])
-      /**
-       * #1 Makes sure column state can rerender
-       */
-      setTimeout(() => {
+      if (type === "drag") {
+        console.log("drag")
+        const cloneEl = document.getElementById(`${drag?.itemId}-clone`)
+        const dragEl = document.getElementById(drag?.itemId as string)
+        if (!cloneEl || !dragEl) return
+        const rect = dragEl.getBoundingClientRect()
+        const offsetX = rect.left + (x ?? 0)
+        const offsetY = rect.top + (y ?? 0)
+        cloneEl.style.left = `${offsetX}px` //! + (container).scrollX
+        cloneEl.style.top = `${offsetY + window.scrollY}px`
+      }
+      /*      if (type === "cancel") {
+        console.log("cancel")
+        const dragEl = document.getElementById(cancel?.itemId as string)
+        const cloneEl = document.getElementById(`${cancel?.itemId}-clone`)
+        if (!dragEl || !cloneEl) {
+          console.error(
+            "Error in (cancel): Missing params => dragEl:",
+            drag?.itemId,
+          )
+        }
         if (cloneEl) {
           const newEl = document.getElementById(drop?.itemId as string)
           if (!newEl) return
@@ -338,17 +335,54 @@ export default function DNDKIT() {
           cloneEl.style.left = `${newEl?.offsetLeft}px`
           cloneEl.style.top = `${newEl?.offsetTop}px`
 
-          /**
-           * Waits for transition end. Alternativ for listening to transitionend, in case transition never occured.
-           */
+          
+          // Waits for transition end. Alternativ for listening to transitionend, in case transition never occured.
+           
           setTimeout(() => {
             cloneEl.remove()
+            dragEl?.classList.remove("opacity-50")
           }, 200)
         }
-      }, 10)
-      // deployAgent()
+      } */
+      if (type === "drop") {
+        console.log("drop")
+        const dragEl = document.getElementById(drop?.itemId as string)
+        const cloneEl = document.getElementById(`${drop?.itemId}-clone`)
+        if (!dragEl) {
+          console.error(
+            "Error in (cancel): Missing params => dragEl:",
+            drag?.itemId,
+          )
+        }
+        setCols(drop?.newState as ColumnProps[])
+        /**
+         * #1 Makes sure column state can rerender
+         */
+        setTimeout(() => {
+          if (cloneEl) {
+            const newEl = document.getElementById(drop?.itemId as string)
+            if (!newEl) return
+            cloneEl.style.transition = "top 200ms ease, left 200ms ease"
+            cloneEl.style.left = `${newEl?.offsetLeft}px`
+            cloneEl.style.top = `${newEl?.offsetTop}px`
+
+            /**
+             * Waits for transition end. Alternativ for listening to transitionend, in case transition never occured.
+             */
+            setTimeout(() => {
+              cloneEl.remove()
+              dragEl?.classList.remove("opacity-50")
+            }, 200)
+          }
+        }, 10)
+        // deployAgent()
+      }
     }
-  }
+
+    ws.onmessage = handleWebsocketMsg
+
+    return () => {}
+  }, [users])
 
   function connectOperator() {
     msg({
@@ -387,14 +421,14 @@ export default function DNDKIT() {
     })
   }
 
-  function cancelDragBroadcast(event: DragCancelEvent) {
+  /*   function cancelDragBroadcast(event: DragCancelEvent) {
     msg({
       type: "cancel",
       cancel: {
         itemId: event.active.id as string,
       },
     })
-  }
+  } */
 
   function endDragBroadcast(event: DragCancelEvent, newState: ColumnProps[]) {
     msg({
@@ -442,55 +476,6 @@ export default function DNDKIT() {
 
   const sensors = useSensors(keyboardSensor, mouseSensor)
 
-  const pending = ws.readyState.toString() === "0"
-  const connected = ws.readyState === 1
-  const closing = ws.readyState === 2
-  const disconnected = ws.readyState === 3
-
-  const dropAnimationConfig: DropAnimation = {
-    keyframes({ transform }) {
-      return [
-        { transform: CSS.Transform.toString(transform.initial) },
-        {
-          transform: CSS.Transform.toString({
-            ...transform.final,
-            scaleX: 0.94,
-            scaleY: 0.94,
-          }),
-        },
-      ]
-    },
-    sideEffects({ active, dragOverlay }) {
-      active.node.style.opacity = "0"
-
-      const button = dragOverlay.node.querySelector("button")
-
-      if (button) {
-        button.animate(
-          [
-            {
-              boxShadow:
-                "-1px 0 15px 0 rgba(34, 33, 81, 0.01), 0px 15px 15px 0 rgba(34, 33, 81, 0.25)",
-            },
-            {
-              boxShadow:
-                "-1px 0 15px 0 rgba(34, 33, 81, 0), 0px 15px 15px 0 rgba(34, 33, 81, 0)",
-            },
-          ],
-          {
-            duration: 250,
-            easing: "ease",
-            fill: "forwards",
-          },
-        )
-      }
-
-      return () => {
-        active.node.style.opacity = ""
-      }
-    },
-  }
-
   return (
     <div
       onPointerEnter={connectOperator}
@@ -499,25 +484,25 @@ export default function DNDKIT() {
     >
       {/* <Button className="my-2" variant={'outline'} onClick={() => ws.close()}><Unplug />Disconnect</Button> */}
       <div className="mb-5 flex items-center gap-2">
-        {pending ? (
+        {connectionStatus === "pending" ? (
           <>
             <CirclePause className={cn("size-5 fill-orange-400")} />
             <span>Connection pending...</span>
           </>
         ) : null}
-        {connected ? (
+        {connectionStatus === "connected" ? (
           <>
             <CircleCheck className={cn("size-5 fill-green-500")} />
             <span>Connected</span>
           </>
         ) : null}
-        {closing ? (
+        {connectionStatus === "closing" ? (
           <>
             <CirclePause className={cn("size-5 fill-orange-400")} />
             <span>Closing connection...</span>
           </>
         ) : null}
-        {disconnected ? (
+        {connectionStatus === "disconnected" ? (
           <>
             <CircleX className={cn("size-5 fill-red-500")} />
             <span>Disconnected</span>
@@ -600,9 +585,7 @@ export default function DNDKIT() {
     const over = event?.over?.data.current as ItemProps & {
       type: "item" | "drop"
     }
-    if (!over) {
-      cancelDragBroadcast(event)
-    }
+
     const isOverItem = over?.type === "item"
 
     if (over?.id === activeItem?.id) {
@@ -703,6 +686,7 @@ function SomeItem({
       {...listeners}
       style={style}
       draggable
+      aria-describedby={`DndDescribeBy-${index}`}
       className={cn(
         className,
         active?.id === data.id && "animate-fade-half opacity-50",

@@ -1,6 +1,5 @@
 export const ws = new WebSocket("ws://192.168.10.132:8000")
-ws.onopen = () => console.log("WebSocket Connected")
-ws.onclose = () => console.log("WebSocket Disconnected")
+
 
 /* ws.onmessage = (e) => {
   const { x, y, deactivate, id } = JSON.parse(e.data)
