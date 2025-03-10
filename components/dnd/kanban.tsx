@@ -109,34 +109,27 @@ function msg(data: MessageProps) {
   }
 }
 
-/**
- * todo: create a hook for websockets with mounted check (avoid hydration issues)
+/* 
+todo: Avoid/throttle messages when not connected
+todo: Handle sorting @ drop <= else DND-animation will not work because of instant setState ✅ ++ send a cancelEvent instead of setting remote state when no changes happen (over.id === active.id not working(?) dont remember)
+todo: Reduce rerendering (memo, callbacks?)
+
+
  */
 
 export default function DNDKIT() {
   const [cols, setCols] = useState<ColumnProps[]>(initialColumns)
   const [activeItem, setActiveItem] = useState<ItemProps | null>(null)
 
-  function addToCol(
-    col: ColumnProps,
-    item: ItemProps | null,
-    over: DragOverEvent["over"],
-  ): ColumnProps {
+  function addToCol(col: ColumnProps, item: ItemProps | null): ColumnProps {
     if (!item || !col)
       throw new Error("Error adding item to column, params missing")
     /**
      * Add item to column, checks if hovered item is an item, if so, change active index to over.index then reset all indexes, else add to bottom. //? Potentially expensive db-operation
      */
-    // todo: try handling the reordering on drop
     return {
       ...col,
-      items: /* over?.data?.current?.type === "item"
-          ? reorderItems(
-              [...col.items, { ...item, col: col.id }],
-              col.items.length,
-              over?.data?.current?.index,
-            )
-          :  */ [
+      items: [
         ...col.items,
         { ...item, col: col.id, index: col.items.length } as ItemProps,
       ],
@@ -184,16 +177,15 @@ export default function DNDKIT() {
     const sourceColId = activeItem.col
     const targetColId = e.over.data.current.col
     const over = e.over.data.current as ItemProps & { type: "item" | "drop" }
-    const isOverItem = over.type === "item"
 
     if (targetColId !== sourceColId) {
       const newCols = cols.map((col) => {
         if (col.id === over.col) {
           const newItem = { ...activeItem }
-          newItem.index = isOverItem ? over.index : (col.items.length ?? 0)
+          newItem.index = col.items.length
           newItem.col = col.id
           setActiveItem(newItem)
-          return addToCol(col, activeItem, e.over)
+          return addToCol(col, activeItem)
         } else {
           return removeFromCol(col, activeItem.id)
         }
@@ -318,7 +310,7 @@ export default function DNDKIT() {
         cloneEl.style.left = `${offsetX}px` //! + (container).scrollX
         cloneEl.style.top = `${offsetY + window.scrollY}px`
       }
-      /*      if (type === "cancel") {
+      if (type === "cancel") {
         console.log("cancel")
         const dragEl = document.getElementById(cancel?.itemId as string)
         const cloneEl = document.getElementById(`${cancel?.itemId}-clone`)
@@ -329,21 +321,18 @@ export default function DNDKIT() {
           )
         }
         if (cloneEl) {
-          const newEl = document.getElementById(drop?.itemId as string)
-          if (!newEl) return
           cloneEl.style.transition = "top 200ms ease, left 200ms ease"
-          cloneEl.style.left = `${newEl?.offsetLeft}px`
-          cloneEl.style.top = `${newEl?.offsetTop}px`
+          cloneEl.style.left = `${dragEl?.offsetLeft}px`
+          cloneEl.style.top = `${dragEl?.offsetTop}px`
 
-          
           // Waits for transition end. Alternativ for listening to transitionend, in case transition never occured.
-           
+
           setTimeout(() => {
             cloneEl.remove()
             dragEl?.classList.remove("opacity-50")
           }, 200)
         }
-      } */
+      }
       if (type === "drop") {
         console.log("drop")
         const dragEl = document.getElementById(drop?.itemId as string)
@@ -394,14 +383,14 @@ export default function DNDKIT() {
     })
   }
 
-  function disconnectOperator() {
+  /* function disconnectOperator() {
     msg({
       type: "disconnect",
       disconnect: {
         user: "Admin",
       },
     })
-  }
+  } */
 
   function broadcastOperator(event: React.PointerEvent<HTMLDivElement>) {
     msg({
@@ -582,21 +571,24 @@ export default function DNDKIT() {
   }
 
   function handleDragEnd(event: DragEndEvent) {
+    console.log("STARTING!!! ------------------- OVER ID:", event?.over?.id)
     const over = event?.over?.data.current as ItemProps & {
       type: "item" | "drop"
     }
 
     const isOverItem = over?.type === "item"
 
-    if (over?.id === activeItem?.id) {
-      endDragBroadcast(event, cols)
-      setActiveItem(null)
-      return
-    }
-
     if (isOverItem) {
+      console.log("overItem")
       const newCols = cols.map((col) => {
         if (col.id === over.col) {
+          console.log(
+            "col id = over col. ActiveIndex =",
+            activeItem?.index,
+            "overIndex =",
+            over.index,
+          )
+          console.log("col items length:", col.items.length)
           return {
             ...col,
             items: reorderItems(
@@ -611,9 +603,13 @@ export default function DNDKIT() {
 
       endDragBroadcast(event, newCols)
       setCols(newCols)
-    } else {
-      endDragBroadcast(event, cols)
+      setActiveItem(null)
+      return
     }
+
+    console.log("nothing else")
+    endDragBroadcast(event, cols)
+
     setActiveItem(null)
   }
 }
@@ -639,7 +635,7 @@ function Dropzone({
   return (
     <div
       ref={setNodeRef}
-      className="bg-muted flex h-full min-h-40 min-w-52 flex-col items-center gap-2 p-2 outline"
+      className="bg-muted flex h-full min-h-40 min-w-52 flex-col items-center gap-2 p-2 pb-40 outline"
     >
       {children}
     </div>
