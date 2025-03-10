@@ -11,6 +11,7 @@ import {
   DragOverEvent,
   DragOverlay,
   DragStartEvent,
+  DropAnimation,
   KeyboardSensor,
   MouseSensor,
   useDroppable,
@@ -107,7 +108,6 @@ function msg(data: MessageProps) {
 }
 
 /**
- * todo: fix the transition end scaling issue
  * todo: create a hook for websockets with mounted check (avoid hydration issues)
  */
 
@@ -299,7 +299,7 @@ export default function DNDKIT() {
       const rect = dragEl.getBoundingClientRect()
       const offsetX = rect.left + (x ?? 0)
       const offsetY = rect.top + (y ?? 0)
-      cloneEl.style.left = `${offsetX}px` //! Compensate for whatever container is scrolling
+      cloneEl.style.left = `${offsetX}px` //! + (container).scrollX
       cloneEl.style.top = `${offsetY + window.scrollY}px`
     }
     if (type === "cancel") {
@@ -447,6 +447,50 @@ export default function DNDKIT() {
   const closing = ws.readyState === 2
   const disconnected = ws.readyState === 3
 
+  const dropAnimationConfig: DropAnimation = {
+    keyframes({ transform }) {
+      return [
+        { transform: CSS.Transform.toString(transform.initial) },
+        {
+          transform: CSS.Transform.toString({
+            ...transform.final,
+            scaleX: 0.94,
+            scaleY: 0.94,
+          }),
+        },
+      ]
+    },
+    sideEffects({ active, dragOverlay }) {
+      active.node.style.opacity = "0"
+
+      const button = dragOverlay.node.querySelector("button")
+
+      if (button) {
+        button.animate(
+          [
+            {
+              boxShadow:
+                "-1px 0 15px 0 rgba(34, 33, 81, 0.01), 0px 15px 15px 0 rgba(34, 33, 81, 0.25)",
+            },
+            {
+              boxShadow:
+                "-1px 0 15px 0 rgba(34, 33, 81, 0), 0px 15px 15px 0 rgba(34, 33, 81, 0)",
+            },
+          ],
+          {
+            duration: 250,
+            easing: "ease",
+            fill: "forwards",
+          },
+        )
+      }
+
+      return () => {
+        active.node.style.opacity = ""
+      }
+    },
+  }
+
   return (
     <div
       onPointerEnter={connectOperator}
@@ -507,12 +551,16 @@ export default function DNDKIT() {
           })}
         </div>
         <DragOverlay
-          className="z-[9999]"
           dropAnimation={{
+            duration: 200,
             sideEffects: defaultDropAnimationSideEffects({
               styles: {
                 active: {
                   opacity: "0.5",
+                },
+                dragOverlay: {
+                  translate: "-5px -3px",
+                  transition: "translate 200ms ease",
                 },
               },
             }),
@@ -526,7 +574,7 @@ export default function DNDKIT() {
           ) : null}
         </DragOverlay>
       </DndContext>
-      {!!users?.length
+      {users?.length
         ? users.map((user, index) => (
             <div
               key={`${user}-${index}`}
@@ -631,25 +679,17 @@ function SomeItem({
   const animateLayoutChanges: AnimateLayoutChanges = (args) =>
     defaultAnimateLayoutChanges({ ...args, wasDragging: true })
 
-  const {
-    active,
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    over,
-    isOver,
-  } = useSortable({
-    id: data.id,
-    data: {
-      ...data,
-      index,
-      type: "item",
-      colIndex,
-    },
-    animateLayoutChanges,
-  })
+  const { active, attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: data.id,
+      data: {
+        ...data,
+        index,
+        type: "item",
+        colIndex,
+      },
+      animateLayoutChanges,
+    })
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,

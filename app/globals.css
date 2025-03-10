@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -79,17 +79,16 @@
 
   @keyframes pop {
     0% {
-      transform: scale(1);
+      transform: translate3d(0, 0, 0) scale(1);
       box-shadow: var(--box-shadow);
     }
     100% {
-      transform: scale(1.05);
+      transform: translate3d(0, 0px, 0) scale(1.05);
       box-shadow:
         -1px 0 15px 0 rgba(34, 33, 81, 0.01),
         0px 15px 15px 0 rgba(34, 33, 81, 0.25);
     }
   }
-  
 }
 
 /*
@@ -108,6 +107,7 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
   }
+
 }
 
 @utility text-balance {
@@ -122,10 +122,6 @@
     @apply text-2xl font-bold;
   }
 }
-
-
-
-
 
 @layer base {
   :root {
@@ -183,10 +179,6 @@
     --chart-5: 340 75% 55%;
   }
 }
-
-
-
-
 
 @layer base {
   * {
