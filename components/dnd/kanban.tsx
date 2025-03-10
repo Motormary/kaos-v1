@@ -25,8 +25,14 @@ import {
   useSortable,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import throttle from "lodash.throttle"
 import { CircleCheck, CirclePause, CircleX, MousePointer2 } from "lucide-react"
 import { useEffect, useState } from "react"
+
+/**
+ * Ping/latency/lag/throttle
+ */
+const latency = 0
 
 const initialColumns = [
   {
@@ -97,7 +103,7 @@ type MessageProps = {
 
 function msg(data: MessageProps) {
   if (ws && ws?.readyState !== 1) {
-    console.warn("Message not sent, readyState:", ws.readyState)
+    console.warn("Message not sent, not connected to websocket.")
     return
   } else {
     try {
@@ -111,15 +117,15 @@ function msg(data: MessageProps) {
 
 /* 
 todo: Avoid/throttle messages when not connected
-todo: Handle sorting @ drop <= else DND-animation will not work because of instant setState ✅ ++ send a cancelEvent instead of setting remote state when no changes happen (over.id === active.id not working(?) dont remember)
+todo: Handle sorting @ drop <= else DND-animation will not work because of instant setState ✅ ++ send a cancelEvent instead of setting remote state when no changes happen ✅
 todo: Reduce rerendering (memo, callbacks?)
-
 
  */
 
 export default function DNDKIT() {
   const [cols, setCols] = useState<ColumnProps[]>(initialColumns)
   const [activeItem, setActiveItem] = useState<ItemProps | null>(null)
+  const [source, setSource] = useState<string | null>(null)
 
   function addToCol(col: ColumnProps, item: ItemProps | null): ColumnProps {
     if (!item || !col)
@@ -259,6 +265,7 @@ export default function DNDKIT() {
         if (mouse) {
           const offsetX = (x ?? 0) - 3.5
           const offsetY = (y ?? 0) - 3.5
+          mouse.style.transition = "top 0ms linear, left 0ms linear"
           mouse.style.left = `${offsetX}px`
           mouse.style.top = `${offsetY}px`
         }
@@ -392,32 +399,44 @@ export default function DNDKIT() {
     })
   } */
 
-  function broadcastOperator(event: React.PointerEvent<HTMLDivElement>) {
-    msg({
-      type: "move",
-      move: { user: "Admin" },
-      x: event.pageX,
-      y: event.pageY,
-    })
-  }
+  const broadcastOperator = throttle(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      msg({
+        type: "move",
+        move: { user: "Admin" },
+        x: event.pageX,
+        y: event.pageY,
+      })
+    },
+    latency,
+    {
+      trailing: true,
+    },
+  )
 
-  function broadcastDrag(event: DragMoveEvent) {
-    msg({
-      type: "drag",
-      drag: { itemId: event.active.id as string },
-      x: event.delta.x,
-      y: event.delta.y,
-    })
-  }
+  const broadcastDrag = throttle(
+    (event: DragMoveEvent) => {
+      msg({
+        type: "drag",
+        drag: { itemId: event?.active?.id as string },
+        x: event.delta.x,
+        y: event.delta.y,
+      })
+    },
+    latency,
+    {
+      trailing: true,
+    },
+  )
 
-  /*   function cancelDragBroadcast(event: DragCancelEvent) {
+  function cancelDragBroadcast(event: DragCancelEvent) {
     msg({
       type: "cancel",
       cancel: {
         itemId: event.active.id as string,
       },
     })
-  } */
+  }
 
   function endDragBroadcast(event: DragCancelEvent, newState: ColumnProps[]) {
     msg({
@@ -567,6 +586,7 @@ export default function DNDKIT() {
 
   function handleDragStart(event: DragStartEvent) {
     startBroadcast(event)
+    setSource(event.active.data?.current?.col)
     setActiveItem(event.active.data.current as ItemProps)
   }
 
@@ -577,6 +597,13 @@ export default function DNDKIT() {
     }
 
     const isOverItem = over?.type === "item"
+
+    if (over.id === activeItem?.id && source === over.col) {
+      setActiveItem(null)
+      setSource(null)
+      cancelDragBroadcast(event)
+      return
+    }
 
     if (isOverItem) {
       console.log("overItem")
@@ -604,13 +631,14 @@ export default function DNDKIT() {
       endDragBroadcast(event, newCols)
       setCols(newCols)
       setActiveItem(null)
+      setSource(null)
       return
     }
 
     console.log("nothing else")
     endDragBroadcast(event, cols)
-
     setActiveItem(null)
+    setSource(null)
   }
 }
 
