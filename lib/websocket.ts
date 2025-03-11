@@ -1,14 +1,19 @@
 import throttle from "lodash.throttle"
 import { MessageProps } from "./kanban/types"
+import { ws } from "./kanban/use-connection"
 
-export const ws = new WebSocket("ws://192.168.10.132:8000")
+// export const ws = new WebSocket("ws://192.168.10.132:8000")
 
 const reportError = throttle(
   () => console.warn("Message not sent, not connected to websocket."),
   30000,
+  {
+    trailing: false
+  },
 )
 
-export function msg(data: MessageProps) {
+export function msg(data: MessageProps['message']) {
+  if (ws === null) return
   if (ws && ws?.readyState !== 1) {
     reportError()
     return

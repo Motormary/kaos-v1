@@ -10,30 +10,42 @@ export type ColumnProps = {
 }
 
 export type MessageProps = {
-  type: "connect" | "disconnect" | "move" | "start" | "drag" | "drop" | "cancel"
-  x?: number
-  y?: number
-  connect?: {
-    user: string
-    time: Date
-  }
-  disconnect?: {
-    user: string
-  }
-  move?: {
-    user: string
-  }
-  drag?: {
-    itemId: string
-  }
-  drop?: {
-    itemId: string
-    newState?: ColumnProps[]
-  }
-  cancel?: {
-    itemId: string
-  }
-  start?: {
-    itemId: string
+  remoteClient: string
+  message: {
+    type:
+      | "connect"
+      | "connected"
+      | "disconnect"
+      | "move"
+      | "start"
+      | "drag"
+      | "drop"
+      | "cancel"
+    x?: number
+    y?: number
+    currentUsers?: string[]
+    connect?: {
+      user: string
+      time: Date
+    }
+    disconnect?: {
+      user: string
+    }
+    move?: {
+      user: string
+    }
+    drag?: {
+      itemId: string
+    }
+    drop?: {
+      itemId: string
+      newState?: ColumnProps[]
+    }
+    cancel?: {
+      itemId: string
+    }
+    start?: {
+      itemId: string
+    }
   }
 }

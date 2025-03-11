@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react"
-import { msg, ws } from "../websocket"
+import { msg } from "../websocket"
 import { ColumnProps, MessageProps } from "./types"
 import throttle from "lodash.throttle"
 import { latency } from "./data"
 import { DragCancelEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core"
+
+export let ws: WebSocket | null = null
+
+const myname = `master-${Math.random()}`
 
 export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   const [users, setUsers] = useState<string[]>([])
@@ -12,6 +16,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   >("disconnected")
 
   useEffect(() => {
+    if (ws === null) return
     switch (ws.readyState) {
       case 0:
         setConnectionStatus("pending")
@@ -29,43 +34,50 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
 
     const handleWebsocketMsg = (event: MessageEvent) => {
       const {
-        type,
-        connect,
-        disconnect,
-        start,
-        drag,
-        drop,
-        cancel,
-        move,
-        x,
-        y,
+        remoteClient,
+        message: {
+          currentUsers,
+          type,
+          connect,
+          disconnect,
+          start,
+          drag,
+          drop,
+          cancel,
+          move,
+          x,
+          y,
+        },
       }: MessageProps = JSON.parse(event.data)
 
       const isConnected = users?.some(
-        (user) => user?.toLowerCase() === connect?.user?.toLowerCase(),
+        (user) => user?.toLowerCase() === remoteClient.toLowerCase(),
       )
 
+      if (type === "connected" && currentUsers?.length) {
+        setUsers(currentUsers as string[])
+      }
       if (type === "connect") {
         if (isConnected) {
           return
         }
-        console.info("Connecting user:", connect?.user)
+        console.info("Connecting user:", remoteClient)
         setUsers((prev) => [...prev, connect?.user as string])
       }
 
       if (type === "disconnect") {
         if (
           users?.some(
-            (user) => user?.toLowerCase() === disconnect?.user?.toLowerCase(),
+            (user) => user?.toLowerCase() === remoteClient.toLowerCase(),
           )
         ) {
-          console.log("disconnecting")
-          setUsers((prev) => prev.filter((user) => user !== disconnect?.user))
+          console.log("disconnecting user:", remoteClient)
+          setUsers((prev) => prev.filter((user) => user !== remoteClient))
         }
       }
 
       if (type === "move") {
-        const mouse = document?.getElementById(move?.user as string)
+        const mouse = document?.getElementById(remoteClient)
         if (mouse) {
           const offsetX = (x ?? 0) - 3.5
           const offsetY = (y ?? 0) - 3.5
@@ -136,7 +148,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
           cloneEl.style.left = `${dragEl?.offsetLeft}px`
           cloneEl.style.top = `${dragEl?.offsetTop}px`
 
-          // Waits for transition end. Alternativ for listening to transitionend, in case transition never occured.
+          // Waits for transition end. Alternative for listening to transitionend, in case transition never occured.
 
           setTimeout(() => {
             cloneEl.remove()
@@ -167,7 +179,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
             cloneEl.style.top = `${newEl?.offsetTop}px`
 
             /**
-             * Waits for transition end. Alternativ for listening to transitionend, in case transition never occured.
+             * Waits for transition end. Alternative for listening to transitionend, in case transition never occured.
              */
             setTimeout(() => {
               cloneEl.remove()
@@ -184,35 +196,88 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     return () => {}
   }, [users, setCols])
 
-  function connectOperator() {
-    if (ws.readyState === 0) {
-      setConnectionStatus("connected")
+  let attempt = 0
+  // Will check connection status after a second pause
+  function reCheckStatus() {
+    if (attempt >= 10) {
+      checkAndSetStatus()
+      attempt = 0
+      return
     }
-    msg({
-      type: "connect",
-      connect: {
-        user: "Admin",
-        time: new Date(),
-      },
-    })
+    setTimeout(() => {
+      checkAndSetStatus()
+      attempt++
+    }, 1000)
+  }
+
+  function checkAndSetStatus() {
+    if (ws === null) return
+    switch (ws.readyState) {
+      case 0:
+        if (connectionStatus !== "pending") {
+          setConnectionStatus("pending")
+          reCheckStatus()
+        }
+        break
+      case 1:
+        if (connectionStatus !== "connected") {
+          setConnectionStatus("connected")
+          attempt = 0
+        }
+        break
+      case 2:
+        if (connectionStatus !== "closing") {
+          setConnectionStatus("closing")
+          reCheckStatus()
+        }
+        break
+      default:
+        if (connectionStatus !== "disconnected") {
+          setConnectionStatus("disconnected")
+          attempt = 0
+        }
+        break
+    }
+  }
+
+  function connectOperator() {
+    // Check for connection (connecting / pending)
+    if (connectionStatus !== "pending" && connectionStatus !== "closing") {
+      console.info("Creating new WS connection")
+      ws = new WebSocket(`ws://192.168.10.132:8000?user=${myname}`)
+      // Force a rerender of users to reset the ws.onmessage
+      setUsers((prev) => prev.map((user) => user))
+      checkAndSetStatus()
+    }
+    setTimeout(() => {
+      msg({
+        type: "connect",
+        connect: {
+          user: myname,
+          time: new Date(),
+        },
+      })
+    }, 1000)
   }
 
   function disconnectOperator() {
+    if (ws === null) return
+
     msg({
       type: "disconnect",
       disconnect: {
-        user: "Admin",
+        user: myname,
       },
     })
-    setConnectionStatus("disconnected")
     ws.close()
+    checkAndSetStatus()
   }
 
   const broadcastOperator = throttle(
     (event: React.PointerEvent<HTMLDivElement>) => {
       msg({
         type: "move",
-        move: { user: "Admin" },
+        move: { user: myname },
         x: event.pageX,
         y: event.pageY,
       })
@@ -258,6 +323,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   }
 
   function startBroadcast(event: DragStartEvent) {
+    checkAndSetStatus()
     msg({
       type: "start",
       start: {
@@ -281,6 +347,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
 
   return {
     users, // users in group
+    setUsers,
     connectionStatus, // websocket status
     connectOperator, // Connect to websocket
     disconnectOperator,

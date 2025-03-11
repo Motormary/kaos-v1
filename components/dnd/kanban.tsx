@@ -30,7 +30,8 @@ import {
   CirclePause,
   CircleX,
   MousePointer2,
-  Unplug,
+  ScreenShare,
+  ScreenShareOff,
 } from "lucide-react"
 import { useState } from "react"
 import { Button } from "../ui/button"
@@ -98,7 +99,7 @@ export default function DNDKIT() {
 
     const isOverItem = over?.type === "item"
 
-    if (over.id === activeItem?.id && source === over.col) {
+    if (over?.id === activeItem?.id && source === over?.col) {
       setActiveItem(null)
       setSource(null)
       cancelDragBroadcast(event)
@@ -107,7 +108,7 @@ export default function DNDKIT() {
 
     if (isOverItem) {
       const newCols = cols.map((col) => {
-        if (col.id === over.col) {
+        if (col.id === over?.col) {
           return {
             ...col,
             items: reorderItems(
@@ -146,36 +147,59 @@ export default function DNDKIT() {
 
   return (
     <div
-      onPointerEnter={connectOperator}
       onPointerMove={broadcastOperator}
       className="min-h-svh overflow-x-hidden overflow-y-hidden p-5 outline"
     >
-      <Button className="my-2" variant={"outline"} onClick={disconnectOperator}>
-        <Unplug />
-        Disconnect
-      </Button>
+      {connectionStatus === "connected" ? (
+        <Button
+          className="my-2"
+          variant={"outline"}
+          onClick={() => {
+            disconnectOperator()
+          }}
+        >
+          <ScreenShareOff />
+          Disconnect
+        </Button>
+      ) : (
+        <Button
+          disabled={connectionStatus !== "disconnected"}
+          className="my-2"
+          variant={"outline"}
+          onClick={connectOperator}
+        >
+          <ScreenShare />
+          Connect
+        </Button>
+      )}
       <div className="mb-5 flex items-center gap-2">
         {connectionStatus === "pending" ? (
           <>
-            <CirclePause className={cn("size-5 fill-orange-400")} />
-            <span>Connection pending...</span>
+            <CirclePause
+              className={cn("size-5 fill-orange-400 stroke-[1.5px]")}
+            />
+            <span>Connecting...</span>
           </>
         ) : null}
         {connectionStatus === "connected" ? (
           <>
-            <CircleCheck className={cn("size-5 fill-green-500")} />
+            <CircleCheck
+              className={cn("size-5 fill-green-400 stroke-[1.5px]")}
+            />
             <span>Connected</span>
           </>
         ) : null}
         {connectionStatus === "closing" ? (
           <>
-            <CirclePause className={cn("size-5 fill-orange-400")} />
-            <span>Closing connection...</span>
+            <CirclePause
+              className={cn("size-5 fill-orange-400 stroke-[1.5px]")}
+            />
+            <span>Disconnecting...</span>
           </>
         ) : null}
         {connectionStatus === "disconnected" ? (
           <>
-            <CircleX className={cn("size-5 fill-red-500")} />
+            <CircleX className={cn("size-5 fill-red-400 stroke-[1.5px]")} />
             <span>Disconnected</span>
           </>
         ) : null}
@@ -230,7 +254,7 @@ export default function DNDKIT() {
           ) : null}
         </DragOverlay>
       </DndContext>
-      {users?.length
+      {connectionStatus === "connected" && users?.length
         ? users.map((user, index) => (
             <div
               key={`${user}-${index}`}
@@ -269,7 +293,7 @@ function Dropzone({
   return (
     <div
       ref={setNodeRef}
-      className="bg-muted flex h-full min-h-40 min-w-52 flex-col items-center gap-2 p-2 pb-40 outline"
+      className="bg-muted flex h-full min-h-40 min-w-52 flex-col items-center gap-2 p-2 outline"
     >
       {children}
     </div>
