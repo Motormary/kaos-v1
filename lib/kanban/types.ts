@@ -2,6 +2,9 @@ export type ItemProps = {
   id: string
   index: number
   col: string
+  title: string
+  body: string
+  url: string
 }
 
 export type ColumnProps = {

@@ -14,17 +14,10 @@ import {
   DragStartEvent,
   KeyboardSensor,
   MouseSensor,
-  useDroppable,
   useSensor,
   useSensors,
 } from "@dnd-kit/core"
-import {
-  AnimateLayoutChanges,
-  defaultAnimateLayoutChanges,
-  SortableContext,
-  useSortable,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
+import { SortableContext } from "@dnd-kit/sortable"
 import {
   CircleCheck,
   CirclePause,
@@ -35,13 +28,17 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { Button } from "../ui/button"
+import DropContainer from "./drop-container"
+import SortableItem from "./sortable-item"
+import { SortableItem as Item } from "./item"
 
 /* 
-todo: Handle sorting @ drop <= else DND-animation will not work because of instant setState ✅ ++ send a cancelEvent instead of setting remote state when no changes happen ✅
 todo: Reduce rerendering (memo, callbacks?)
+todo: Add remove columns/items
+todo: Refactor/style components
  */
 
-export default function DNDKIT() {
+export default function KanbanBoard() {
   const [cols, setCols] = useState<ColumnProps[]>(initialColumns)
   const [activeItem, setActiveItem] = useState<ItemProps | null>(null)
   const [source, setSource] = useState<string | null>(null)
@@ -149,11 +146,11 @@ export default function DNDKIT() {
     <div
       onPointerEnter={connectOperator}
       onPointerMove={broadcastOperator}
-      className="min-h-svh overflow-x-hidden overflow-y-hidden p-5 outline"
+      className="min-h-svh w-fit p-5"
     >
       {connectionStatus === "connected" ? (
         <Button
-          className="my-2"
+          className="my-2 w-fit"
           variant={"outline"}
           onClick={() => {
             disconnectOperator()
@@ -165,7 +162,7 @@ export default function DNDKIT() {
       ) : (
         <Button
           disabled={connectionStatus !== "disconnected"}
-          className="my-2"
+          className="my-2 w-fit"
           variant={"outline"}
           onClick={connectOperator}
         >
@@ -213,25 +210,26 @@ export default function DNDKIT() {
         onDragMove={broadcastDrag}
         onDragCancel={(e) => endDragBroadcast(e, cols)}
       >
-        <div className="flex gap-20" suppressHydrationWarning>
+        <div className="flex" suppressHydrationWarning>
           {cols.map((col, colIndex) => {
             return (
               <SortableContext key={col.id} items={col.items}>
-                <Dropzone index={colIndex} data={col}>
+                <DropContainer index={colIndex} data={col}>
                   {col.items.map((item, index) => (
-                    <SomeItem
+                    <SortableItem
                       key={item.id + index}
                       colIndex={colIndex}
                       index={index}
                       data={item}
                     />
                   ))}
-                </Dropzone>
+                </DropContainer>
               </SortableContext>
             )
           })}
         </div>
         <DragOverlay
+          wrapperElement="ul"
           dropAnimation={{
             duration: 200,
             sideEffects: defaultDropAnimationSideEffects({
@@ -248,10 +246,7 @@ export default function DNDKIT() {
           }}
         >
           {activeItem ? (
-            <SomeItem
-              className="animate-pop ring-offset-background ring ring-offset-2"
-              data={activeItem}
-            />
+            <Item className="animate-pop" data={activeItem} />
           ) : null}
         </DragOverlay>
       </DndContext>
@@ -270,90 +265,5 @@ export default function DNDKIT() {
           ))
         : null}
     </div>
-  )
-}
-
-function Dropzone({
-  children,
-  data,
-  index,
-}: {
-  children: React.ReactNode
-  data: ColumnProps
-  index: number
-}) {
-  const { setNodeRef } = useDroppable({
-    id: data.id,
-    data: {
-      colIndex: index,
-      col: data.id,
-      type: "drop",
-    },
-  })
-
-  return (
-    <div
-      ref={setNodeRef}
-      className="bg-muted flex h-full min-h-40 min-w-52 flex-col items-center gap-2 p-2 outline"
-    >
-      {children}
-    </div>
-  )
-}
-
-function SomeItem({
-  className,
-  children,
-  data,
-  index,
-  colIndex,
-}: {
-  data: ItemProps
-  children?: React.ReactNode
-  className?: string
-  index?: number
-  colIndex?: number
-}) {
-  const animateLayoutChanges: AnimateLayoutChanges = (args) =>
-    defaultAnimateLayoutChanges({ ...args, wasDragging: true })
-
-  const { active, attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({
-      id: data.id,
-      data: {
-        ...data,
-        index,
-        type: "item",
-        colIndex,
-      },
-      animateLayoutChanges,
-    })
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-
-  return (
-    <button
-      id={data.id}
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      style={style}
-      draggable
-      aria-describedby={`DndDescribeBy-${index}`}
-      className={cn(
-        className,
-        active?.id === data.id && "animate-fade-half opacity-50",
-        active?.id !== data.id &&
-          "ring-offset-background focus-visible:ring focus-visible:ring-offset-2",
-        "w-48 rounded-sm bg-white p-5 outline",
-      )}
-    >
-      <p>item: {data.id}</p>
-      <p>data-index: {data.index}</p>
-      <p>index: {index}</p>
-      {children}
-    </button>
   )
 }

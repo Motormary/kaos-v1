@@ -1,9 +1,9 @@
-import DNDKIT from "@/components/dnd/kanban"
+import KanbanBoard from "@/components/dnd/kanban"
 
 export default async function Colab() {
   return (
     <div>
-      <DNDKIT />
+      <KanbanBoard />
     </div>
   )
 }
