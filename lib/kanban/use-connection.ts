@@ -7,7 +7,7 @@ import { DragCancelEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core"
 
 export let ws: WebSocket | null = null
 
-const myname = `master-${Math.random()}`
+const myname = `master-${(1 + Math.random()).toFixed(3)}`
 
 export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   const [users, setUsers] = useState<string[]>([])
