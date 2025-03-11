@@ -147,6 +147,7 @@ export default function DNDKIT() {
 
   return (
     <div
+      onPointerEnter={connectOperator}
       onPointerMove={broadcastOperator}
       className="min-h-svh overflow-x-hidden overflow-y-hidden p-5 outline"
     >

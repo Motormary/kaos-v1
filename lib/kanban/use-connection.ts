@@ -5,15 +5,18 @@ import throttle from "lodash.throttle"
 import { latency } from "./data"
 import { DragCancelEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core"
 
-export let ws: WebSocket | null = null
-
 const myname = `master-${(1 + Math.random()).toFixed(3)}`
+
+export let ws: WebSocket | null = new WebSocket(
+  `ws://192.168.10.132:8000?user=${myname}`,
+)
 
 export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   const [users, setUsers] = useState<string[]>([])
   const [connectionStatus, setConnectionStatus] = useState<
     "pending" | "connected" | "closing" | "disconnected"
   >("disconnected")
+
 
   useEffect(() => {
     if (ws === null) return
@@ -62,7 +65,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
           return
         }
         console.info("Connecting user:", remoteClient)
-        setUsers((prev) => [...prev, connect?.user as string])
+        setUsers((prev) => [...prev, remoteClient])
       }
 
       if (type === "disconnect") {
@@ -148,7 +151,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
           cloneEl.style.left = `${dragEl?.offsetLeft}px`
           cloneEl.style.top = `${dragEl?.offsetTop}px`
 
-          // Waits for transition end. Alternative for listening to transitionend, in case transition never occured.
+          // Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
 
           setTimeout(() => {
             cloneEl.remove()
@@ -179,7 +182,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
             cloneEl.style.top = `${newEl?.offsetTop}px`
 
             /**
-             * Waits for transition end. Alternative for listening to transitionend, in case transition never occured.
+             * Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
              */
             setTimeout(() => {
               cloneEl.remove()
@@ -241,8 +244,8 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   }
 
   function connectOperator() {
-    // Check for connection (connecting / pending)
-    if (connectionStatus !== "pending" && connectionStatus !== "closing") {
+    // Check for connection
+    if (connectionStatus !== "pending" && connectionStatus !== "closing" && connectionStatus !== 'connected') {
       console.info("Creating new WS connection")
       ws = new WebSocket(`ws://192.168.10.132:8000?user=${myname}`)
       // Force a rerender of users to reset the ws.onmessage
