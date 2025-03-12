@@ -155,7 +155,7 @@ export default function KanbanBoard() {
     <div
       onPointerEnter={connectOperator}
       onPointerMove={broadcastOperator}
-      className="mx-auto flex w-full flex-col"
+      className="mx-auto flex w-full flex-col p-5"
     >
       {connectionStatus === "connected" ? (
         <Button

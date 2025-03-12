@@ -12,7 +12,7 @@ export const DropContainer = forwardRef<
     index: number
   }
 >(({ data, index, children, ...props }, ref) => {
-  const { setNodeRef, over } = useDroppable({
+  const { setNodeRef } = useDroppable({
     id: data.id,
     data: {
       colIndex: index,
@@ -22,8 +22,8 @@ export const DropContainer = forwardRef<
   })
 
   return (
-    <div>
-      <p className="text-primary-foreground text-center text-3xl font-bold">
+    <div className="mx-[0.5px] border">
+      <p className="text-primary bg-muted/50 p-2.5 text-center text-3xl font-bold">
         {data.id}
       </p>
       <ScrollArea
@@ -36,7 +36,7 @@ export const DropContainer = forwardRef<
           id={data.id}
           ref={setNodeRef}
           className={cn(
-            "outline-muted-foreground/40 mx-0.5 grid min-h-[85svh] min-w-[336px] content-start gap-2 rounded-sm p-2",
+            "grid min-h-[85svh] min-w-[336px] content-start gap-2 p-2",
           )}
         >
           {children}

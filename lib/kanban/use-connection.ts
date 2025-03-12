@@ -20,6 +20,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   const [scrollContainer, setScrollContainer] = useState("")
   const mainScrollX = mainRef.current?.scrollLeft ?? 0
   const mainScrollY = mainRef.current?.scrollTop ?? 0
+  let isRemoteScroll = false
 
   useEffect(() => {
     mainRef.current = document.querySelector("main")
@@ -92,11 +93,14 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         if (containerEl) {
           //! PREVENT LOOP
           const viewEL = containerEl.children.item(1)
-          if (viewEL)
+          if (viewEL) {
+            isRemoteScroll = true // Mark the next scroll as remote
             viewEL.scrollTo({
               top: scroll?.y,
-              behavior: "smooth",
+              behavior: "instant",
             })
+            setTimeout(() => (isRemoteScroll = false), 100)
+          }
         }
       }
       if (type === "move") {
@@ -311,6 +315,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   )
 
   const broadcastScroll = throttle((event: React.UIEvent<HTMLDivElement>) => {
+    if (isRemoteScroll) return
     //! WEE
     //! WOO
     //! WEE

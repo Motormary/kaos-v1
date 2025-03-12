@@ -35,7 +35,7 @@ export default function RootLayout({
         /> */}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} relative h-svh overflow-y-hidden bg-[url('http://192.168.10.132:8000/assets/background.jpg')] bg-cover bg-no-repeat antialiased outline`}
+        className={`${geistSans.variable} ${geistMono.variable} relative h-svh overflow-hidden overflow-y-hidden bg-[url('http://192.168.10.132:8000/assets/background.jpg')] bg-cover bg-no-repeat antialiased outline`}
       >
         <ThemeProvider
           attribute="class"
