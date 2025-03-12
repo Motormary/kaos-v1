@@ -63,7 +63,7 @@
       opacity: 0;
     }
     100% {
-      transformn: translateY(0%);
+      transform: translateY(0%);
       opacity: 1;
     }
   }
@@ -121,6 +121,7 @@
   h2 {
     @apply text-2xl font-bold;
   }
+
 }
 
 @layer base {

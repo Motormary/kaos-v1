@@ -4,7 +4,6 @@ export type ItemProps = {
   col: string
   title: string
   body: string
-  url: string
 }
 
 export type ColumnProps = {
@@ -24,9 +23,17 @@ export type MessageProps = {
       | "drag"
       | "drop"
       | "cancel"
+      | "scroll"
     x?: number
     y?: number
     currentUsers?: string[]
+    overCol?: string
+    scroll?: {
+      user: string,
+      y: number
+      x?: number
+      containerId: string
+    }
     connect?: {
       user: string
       time: Date

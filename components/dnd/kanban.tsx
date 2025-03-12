@@ -14,6 +14,7 @@ import {
   DragStartEvent,
   KeyboardSensor,
   MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core"
@@ -28,7 +29,7 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { Button } from "../ui/button"
-import DropContainer from "./drop-container"
+import { DropContainer } from "./drop-container"
 import SortableItem from "./sortable-item"
 import { SortableItem as Item } from "./item"
 
@@ -52,6 +53,8 @@ export default function KanbanBoard() {
     endDragBroadcast,
     startBroadcast,
     disconnectOperator,
+    broadcastScroll,
+    setOverRef,
   } = useBroadCast(setCols)
 
   function handleDragOver(
@@ -138,15 +141,21 @@ export default function KanbanBoard() {
     },
   })
 
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 300,
+      tolerance: 100,
+      distance: 200,
+    },
+  })
   const mouseSensor = useSensor(MouseSensor)
-
-  const sensors = useSensors(keyboardSensor, mouseSensor)
+  const sensors = useSensors(keyboardSensor, mouseSensor, touchSensor)
 
   return (
     <div
       onPointerEnter={connectOperator}
       onPointerMove={broadcastOperator}
-      className="min-h-svh w-fit p-5"
+      className="mx-auto flex w-full flex-col"
     >
       {connectionStatus === "connected" ? (
         <Button
@@ -214,7 +223,12 @@ export default function KanbanBoard() {
           {cols.map((col, colIndex) => {
             return (
               <SortableContext key={col.id} items={col.items}>
-                <DropContainer index={colIndex} data={col}>
+                <DropContainer
+                  onPointerEnter={setOverRef}
+                  onScrollCapture={broadcastScroll}
+                  index={colIndex}
+                  data={col}
+                >
                   {col.items.map((item, index) => (
                     <SortableItem
                       key={item.id + index}
@@ -246,7 +260,11 @@ export default function KanbanBoard() {
           }}
         >
           {activeItem ? (
-            <Item className="animate-pop" data={activeItem} />
+            <Item
+              className="animate-pop bg-background"
+              active={true}
+              data={activeItem}
+            />
           ) : null}
         </DragOverlay>
       </DndContext>

@@ -28,14 +28,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script
+        {/*         <script
           async
           crossOrigin="anonymous"
           src="//unpkg.com/react-scan/dist/auto.global.js"
-        />
+        /> */}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} relative antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} relative h-svh overflow-y-hidden bg-[url('http://192.168.10.132:8000/assets/background.jpg')] bg-cover bg-no-repeat antialiased outline`}
       >
         <ThemeProvider
           attribute="class"
@@ -43,7 +43,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <main className="h-svh overflow-y-scroll">{children}</main>
           <ModeToggle />
         </ThemeProvider>
       </body>
