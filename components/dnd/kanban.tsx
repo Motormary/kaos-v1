@@ -4,7 +4,6 @@ import { initialColumns } from "@/lib/kanban/data"
 import { ColumnProps, ItemProps } from "@/lib/kanban/types"
 import useBroadCast from "@/lib/kanban/use-connection"
 import { addToCol, removeFromCol, reorderItems } from "@/lib/kanban/utils"
-import { cn } from "@/lib/utils"
 import {
   defaultDropAnimationSideEffects,
   DndContext,
@@ -20,20 +19,14 @@ import {
 } from "@dnd-kit/core"
 import { restrictToWindowEdges } from "@dnd-kit/modifiers"
 import { SortableContext } from "@dnd-kit/sortable"
-import {
-  CircleCheck,
-  CirclePause,
-  CircleX,
-  MousePointer2,
-  ScreenShare,
-  ScreenShareOff,
-} from "lucide-react"
+import { MousePointer2 } from "lucide-react"
 import { useState } from "react"
-import { Button } from "../ui/button"
 import { DropContainer } from "./drop-container"
 import { SortableItem as Item } from "./item"
 import SortableItem from "./sortable-item"
+import ConnectionBar from "./connection-bar"
 /* 
+todo: barrel export
 todo: Reduce rerendering (memo, callbacks?)
 todo: Add/remove function for columns/items
 todo: use refs for state
@@ -172,60 +165,12 @@ export default function KanbanBoard() {
       onPointerMove={broadcastOperator}
       className="dnd-container relative z-50 mx-auto flex h-fit w-full flex-col overflow-hidden px-10 py-16"
     >
-      {connectionStatus === "connected" ? (
-        <Button
-          className="my-2 w-fit"
-          variant={"outline"}
-          onClick={() => {
-            disconnectOperator()
-          }}
-        >
-          <ScreenShareOff />
-          Disconnect
-        </Button>
-      ) : (
-        <Button
-          disabled={connectionStatus !== "disconnected"}
-          className="my-2 w-fit"
-          variant={"outline"}
-          onClick={connectOperator}
-        >
-          <ScreenShare />
-          Connect
-        </Button>
-      )}
-      <div className="mb-5 flex items-center gap-2">
-        {connectionStatus === "pending" ? (
-          <>
-            <CirclePause
-              className={cn("size-5 fill-orange-400 stroke-[1.5px]")}
-            />
-            <span>Connecting...</span>
-          </>
-        ) : null}
-        {connectionStatus === "connected" ? (
-          <>
-            <CircleCheck
-              className={cn("size-5 fill-green-400 stroke-[1.5px]")}
-            />
-            <span>Connected</span>
-          </>
-        ) : null}
-        {connectionStatus === "closing" ? (
-          <>
-            <CirclePause
-              className={cn("size-5 fill-orange-400 stroke-[1.5px]")}
-            />
-            <span>Disconnecting...</span>
-          </>
-        ) : null}
-        {connectionStatus === "disconnected" ? (
-          <>
-            <CircleX className={cn("size-5 fill-red-400 stroke-[1.5px]")} />
-            <span>Disconnected</span>
-          </>
-        ) : null}
-      </div>
+      <ConnectionBar
+        connectOperator={connectOperator}
+        connectionStatus={connectionStatus}
+        disconnectOperator={disconnectOperator}
+        users={users}
+      />
       <DndContext
         modifiers={[restrictToWindowEdges]}
         sensors={sensors}
@@ -257,6 +202,7 @@ export default function KanbanBoard() {
             )
           })}
         </div>
+        {/* Drag animation */}
         <DragOverlay
           wrapperElement="ul"
           dropAnimation={{
@@ -283,6 +229,7 @@ export default function KanbanBoard() {
           ) : null}
         </DragOverlay>
       </DndContext>
+      {/* Remote client cursors */}
       {connectionStatus === "connected" && users?.length
         ? users.map((user, index) => (
             <div
