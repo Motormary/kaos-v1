@@ -17,7 +17,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     "pending" | "connected" | "closing" | "disconnected"
   >("disconnected")
   const mainRef = useRef<HTMLElement | null>(null)
-  const [scrollContainer, setScrollContainer] = useState("")
+  const scrollRef = useRef<HTMLElement | null>(null)
   const mainScrollX = mainRef.current?.scrollLeft ?? 0
   const mainScrollY = mainRef.current?.scrollTop ?? 0
   let isRemoteScroll = false
@@ -48,7 +48,6 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         message: {
           currentUsers,
           type,
-          overCol,
           connect,
           disconnect,
           start,
@@ -88,7 +87,9 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         }
       }
       if (type === "scroll") {
-        const containerEl = document.getElementById(scroll?.containerId as string)
+        const containerEl = document.getElementById(
+          scroll?.containerId as string,
+        )
         if (containerEl) {
           //! PREVENT LOOP
           const viewEL = containerEl.children.item(1)
@@ -105,13 +106,15 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       }
       if (type === "move") {
         const mouse = document?.getElementById(remoteClient)
-        if (mouse) {
-          const offsetX = (x ?? 0) - 3.5
-          const offsetY = (y ?? 0) - 3.5
-          mouse.style.transition = "top 0ms linear, left 0ms linear"
-          mouse.style.left = `${offsetX - (mainRef?.current?.scrollLeft ?? 0) - window.scrollX}px`
-          mouse.style.top = `${offsetY - (mainRef?.current?.scrollTop ?? 0) - window.scrollY}px`
-        }
+        const scrollContainer = document.getElementById(move?.overCol as string)
+        const viewPortEl = scrollContainer?.children.item(1)
+
+        if (!mouse) return
+        const offsetX = (x ?? 0) - 3.5 - (viewPortEl?.scrollLeft ?? 0) // the 3.5px are to adjust for the svg pointer position
+        const offsetY = (y ?? 0) - 3.5 - (viewPortEl?.scrollTop ?? 0) //! NICE, hide cursor??
+        mouse.style.transition = "top 0ms linear, left 0ms linear"
+        mouse.style.left = `${offsetX}px`
+        mouse.style.top = `${offsetY}px`
       }
 
       if (type === "start") {
@@ -119,24 +122,14 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         isDraggingRef.current = true
         console.log("start")
         const dragEl = document.getElementById(start?.itemId as string)
-
-        if (!dragEl) {
-          console.error(
-            "Error in (drag): Missing params => id:",
-            start?.itemId,
-            "x:",
-            x,
-            "y:",
-            y,
-          )
-          return
-        }
+        if (!dragEl) return
         const rect = dragEl.getBoundingClientRect()
+        console.log("🚀 ~ handleWebsocketMsg ~ rect:", rect)
         const clone = dragEl.cloneNode(true) as HTMLElement
-        document.body.appendChild(clone)
+        document.querySelector("div.dnd-container")?.appendChild(clone)
         clone.classList.add("ghost")
-        const offsetX = rect.left + (x ?? 0)
-        const offsetY = rect.top + (y ?? 0)
+        const offsetX = rect.x + window.scrollX
+        const offsetY = rect.y + window.scrollY
         clone.id = `${start?.itemId}-clone`
         clone.style.width = `${rect.width}px`
         clone.style.height = `${rect.height}px`
@@ -153,26 +146,24 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         const cloneEl = document.getElementById(`${drag?.itemId}-clone`)
         const dragEl = document.getElementById(drag?.itemId as string)
         if (!cloneEl || !dragEl) return
-        // const dragRect = dragEl.getBoundingClientRect()
-        // const containerRect = containerEl?.getBoundingClientRect()
-        const offsetX = x ?? 0 + window.scrollX
-        const offsetY = y ?? 0 + window.scrollY
-        cloneEl.style.left = `${offsetX}px` //! + (container).scrollX
+        const offsetX =  (x ?? 0) + window.scrollX
+        const offsetY = (y ?? 0)+ window.scrollY
+        cloneEl.style.left = `${offsetX}px`
         cloneEl.style.top = `${offsetY}px`
       }
       if (type === "cancel") {
         console.log("cancel")
         const dragEl = document.getElementById(cancel?.itemId as string)
         const cloneEl = document.getElementById(`${cancel?.itemId}-clone`)
-        const containerEL = document.getElementById(overCol as string)
         if (!dragEl || !cloneEl) return
-        if (cloneEl && containerEL) {
+        if (cloneEl) {
           const dragRect = dragEl.getBoundingClientRect()
+          console.log("🚀 ~ handleWebsocketMsg ~ dragRect:", dragRect)
           cloneEl.style.transition = "top 200ms ease, left 200ms ease"
           cloneEl.style.left = `${dragRect.left}px`
           cloneEl.style.top = `${dragRect.top}px`
 
-          // Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
+          //? Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
 
           setTimeout(() => {
             cloneEl.remove()
@@ -193,20 +184,20 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         }
         setCols(drop?.newState as ColumnProps[])
         /**
-         * Makes sure column state can rerender
+         *? Makes sure column state can rerender
          */
         setTimeout(() => {
           if (cloneEl) {
             const newEl = document.getElementById(drop?.itemId as string)
-            const containerEL = document.getElementById(overCol as string)
+            const containerEL = document.getElementById(drop?.overCol as string)
             if (!newEl || !containerEL) return
             const newRect = newEl.getBoundingClientRect()
             cloneEl.style.transition = "top 200ms ease, left 200ms ease"
-            cloneEl.style.left = `${newRect.left}px`
-            cloneEl.style.top = `${newRect.top}px`
+            cloneEl.style.left = `${newRect.left + window.scrollX}px`
+            cloneEl.style.top = `${newRect.top + window.scrollY}px`
 
             /**
-             * Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
+             *? Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
              */
             setTimeout(() => {
               cloneEl.remove()
@@ -307,51 +298,36 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
 
   const broadcastOperator = throttle(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      const containerEl = document.getElementById(scrollContainer as string)
+      const containerEl = document.getElementById(scrollRef.current?.id ?? "")
+      const viewPortEl = containerEl?.children.item(1)
+
       msg({
         type: "move",
-        move: { user: myname },
-        x: event.pageX + mainScrollX + window.scrollX + (containerEl?.scrollLeft ?? 0),
-        y: event.pageY + mainScrollY + window.scrollY + (containerEl?.scrollTop ?? 0),
+        move: { user: myname, overCol: scrollRef.current?.id },
+        x: event.pageX + (viewPortEl?.scrollLeft ?? 0),
+        y: event.pageY + (viewPortEl?.scrollTop ?? 0),
       })
     },
     latency,
+    {
+      trailing: false,
+    },
   )
-
-  const broadcastScroll = throttle((event: React.UIEvent<HTMLDivElement>) => {
-    if (isRemoteScroll) return
-    //! WEE
-    //! WOO
-    //! WEE
-    //! WOO
-    //! =>>>>>> THIS IS A DANGEROUS LOOP, IT IS TRIGGERED BY THE WHEEL EVENT WHICH TRIGGERS A WHEEL EVENT FOR EVERY USER WHICH TRIGGERS EVERY USER WHICH TRIGGERS EVERY USER WHICH TRIGGERS EVERY USER... ONE TURN OF THE SCROLL === 40x WS.MESSAGE <===== High prio
-    //! WEE
-    //! WOO
-    //! WEE
-    //! WOO
-    //! 🚓
-    //! THROTTLE IS NOT ENOUGH
-    console.log("SCROLL EVENT!")
-    const target = event.target as HTMLDivElement
-    if (target && "scrollTop" in target) {
-      msg({
-        type: "scroll",
-        scroll: {
-          user: myname,
-          y: target.scrollTop,
-          containerId: scrollContainer,
-        },
-      })
-    }
-  }, 100)
 
   const broadcastDrag = throttle(
     (event: DragMoveEvent) => {
+      const containerEl = document.getElementById(scrollRef.current?.id ?? "")
+      console.log("🚀 ~ useBroadCast ~ scrollContainer:", scrollRef.current?.id)
+      console.log("🚀 ~ useBroadCast ~ containerEl:", containerEl?.id)
+      const viewPortEl = containerEl?.children.item(1)
       msg({
         type: "drag",
-        drag: { itemId: event?.active?.id as string },
-        x: (event.active.rect.current.translated?.left ?? 0) + mainScrollX,
-        y: (event.active.rect.current.translated?.top ?? 0) + mainScrollY,
+        drag: {
+          itemId: event?.active?.id as string,
+          overCol: scrollRef.current?.id ?? "",
+        },
+        x: (event.active.rect.current.translated?.left ?? 0)+ (viewPortEl?.scrollLeft ?? 0) + window.scrollX,
+        y: (event.active.rect.current.translated?.top ?? 0) + (viewPortEl?.scrollTop ?? 0) + window.scrollY,
       })
     },
     latency,
@@ -384,6 +360,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         drop: {
           itemId: event.active.id as string,
           newState: newState,
+          overCol: scrollRef.current?.id ?? "",
         },
       })
     },
@@ -410,10 +387,8 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     },
   )
 
-  function setOverRef(id: string) {
-    if (id) {
-      setScrollContainer(id)
-    }
+  function setOverRef(event: HTMLElement | null) {
+    scrollRef.current = event
   }
 
   /**
@@ -442,6 +417,5 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     startBroadcast,
     deployAgent, // remote drag-image cleaner
     setOverRef,
-    broadcastScroll,
   }
 }

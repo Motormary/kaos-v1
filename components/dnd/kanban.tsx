@@ -36,8 +36,10 @@ import SortableItem from "./sortable-item"
 /* 
 todo: Reduce rerendering (memo, callbacks?)
 todo: Add/remove function for columns/items
-todo: Refactor/style components
 todo: use refs for state
+// !bug: fix restrict to window issue, item cannot be sorted to the bottom easily
+// !bug: if remote user has a larger screen the current user can drag out of bounds and get draggable clone stuck 
+!bug: make empty part of bottom of container droppable
  */
 
 export default function KanbanBoard() {
@@ -54,7 +56,6 @@ export default function KanbanBoard() {
     endDragBroadcast,
     startBroadcast,
     disconnectOperator,
-    broadcastScroll,
     setOverRef,
   } = useBroadCast(setCols)
 
@@ -70,8 +71,11 @@ export default function KanbanBoard() {
     const sourceColId = activeItem.col
     const targetColId = e.over.data.current.col
     const over = e.over.data.current as ItemProps & { type: "item" | "drop" }
-    if (over.type === "drop") setOverRef(over?.id)
+    if (over) setOverRef(document.getElementById(over?.col) ?? null) // dependency of remote animation @ useBroadcast.ts
 
+    /**
+     * If hovered column is not start-column, add the dragged item to hovered column and remove it from previous
+     */
     if (targetColId !== sourceColId) {
       const newCols = cols.map((col) => {
         if (col.id === over.col) {
@@ -89,9 +93,9 @@ export default function KanbanBoard() {
   }
 
   function handleDragStart(event: DragStartEvent) {
-    startBroadcast(event)
-    setSource(event.active.data?.current?.col)
-    setActiveItem(event.active.data.current as ItemProps)
+    startBroadcast(event) // Will connect user to websocket on dragStart (dev purposes)
+    setSource(event.active.data?.current?.col) // Source of initiated drag event
+    setActiveItem(event.active.data.current as ItemProps) // Currently dragged item
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -101,6 +105,9 @@ export default function KanbanBoard() {
 
     const isOverItem = over?.type === "item"
 
+    /**
+     * Cancel drag-event if item has not been moved from source location and/or column
+     */
     if (over?.id === activeItem?.id && source === over?.col) {
       setActiveItem(null)
       setSource(null)
@@ -108,6 +115,9 @@ export default function KanbanBoard() {
       return
     }
 
+    /**
+     * If hovering an item, swap active items' index with hovered item
+     */
     if (isOverItem) {
       const newCols = cols.map((col) => {
         if (col.id === over?.col) {
@@ -130,6 +140,9 @@ export default function KanbanBoard() {
       return
     }
 
+    /**
+     * Item has been added to end of new column (locally with handleDragOver), update remote clients.
+     */
     endDragBroadcast(event, cols)
     setActiveItem(null)
     setSource(null)
@@ -157,7 +170,7 @@ export default function KanbanBoard() {
     <div
       onPointerEnter={connectOperator}
       onPointerMove={broadcastOperator}
-      className="mx-auto flex w-full flex-col p-5"
+      className="dnd-container relative z-50 mx-auto flex h-fit w-full flex-col overflow-hidden px-10 py-16"
     >
       {connectionStatus === "connected" ? (
         <Button
@@ -227,8 +240,7 @@ export default function KanbanBoard() {
             return (
               <SortableContext key={col.id} items={col.items}>
                 <DropContainer
-                  onPointerEnter={(e) => setOverRef(e.currentTarget.id)}
-                  onScrollCapture={broadcastScroll}
+                  onPointerEnter={(e) => setOverRef(e.currentTarget)}
                   index={colIndex}
                   data={col}
                 >

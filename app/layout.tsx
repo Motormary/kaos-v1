@@ -35,7 +35,7 @@ export default function RootLayout({
         /> */}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} relative h-svh overflow-hidden overflow-y-hidden bg-[url('http://192.168.10.132:8000/assets/background.jpg')] bg-cover bg-no-repeat antialiased outline`}
+        className={`${geistSans.variable} ${geistMono.variable} relative min-h-svh w-fit overflow-auto bg-[url('http://192.168.10.132:8000/assets/background.jpg')] bg-cover bg-no-repeat antialiased outline-2`}
       >
         <ThemeProvider
           attribute="class"
@@ -43,7 +43,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main className="h-svh overflow-y-scroll">{children}</main>
+          <main>{children}</main>
           <ModeToggle />
         </ThemeProvider>
       </body>

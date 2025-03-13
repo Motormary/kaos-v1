@@ -43,13 +43,16 @@ export type MessageProps = {
     }
     move?: {
       user: string
+      overCol: string | undefined
     }
     drag?: {
+      overCol: string
       itemId: string
     }
     drop?: {
       itemId: string
       newState?: ColumnProps[]
+      overCol: string
     }
     cancel?: {
       itemId: string
