@@ -22,7 +22,7 @@ export const DropContainer = forwardRef<
   })
 
   return (
-    <div className="mx-[0.5px] border">
+    <div className="border">
       <p className="text-primary bg-muted/50 p-2.5 text-center text-3xl font-bold">
         {data.id}
       </p>

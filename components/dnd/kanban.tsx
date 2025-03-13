@@ -18,6 +18,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core"
+import { restrictToWindowEdges } from "@dnd-kit/modifiers"
 import { SortableContext } from "@dnd-kit/sortable"
 import {
   CircleCheck,
@@ -30,13 +31,13 @@ import {
 import { useState } from "react"
 import { Button } from "../ui/button"
 import { DropContainer } from "./drop-container"
-import SortableItem from "./sortable-item"
 import { SortableItem as Item } from "./item"
-
+import SortableItem from "./sortable-item"
 /* 
 todo: Reduce rerendering (memo, callbacks?)
-todo: Add remove columns/items
+todo: Add/remove function for columns/items
 todo: Refactor/style components
+todo: use refs for state
  */
 
 export default function KanbanBoard() {
@@ -69,6 +70,7 @@ export default function KanbanBoard() {
     const sourceColId = activeItem.col
     const targetColId = e.over.data.current.col
     const over = e.over.data.current as ItemProps & { type: "item" | "drop" }
+    if (over.type === "drop") setOverRef(over?.id)
 
     if (targetColId !== sourceColId) {
       const newCols = cols.map((col) => {
@@ -212,6 +214,7 @@ export default function KanbanBoard() {
         ) : null}
       </div>
       <DndContext
+        modifiers={[restrictToWindowEdges]}
         sensors={sensors}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
@@ -219,12 +222,12 @@ export default function KanbanBoard() {
         onDragMove={broadcastDrag}
         onDragCancel={(e) => endDragBroadcast(e, cols)}
       >
-        <div className="flex" suppressHydrationWarning>
+        <div className="flex">
           {cols.map((col, colIndex) => {
             return (
               <SortableContext key={col.id} items={col.items}>
                 <DropContainer
-                  onPointerEnter={setOverRef}
+                  onPointerEnter={(e) => setOverRef(e.currentTarget.id)}
                   onScrollCapture={broadcastScroll}
                   index={colIndex}
                   data={col}

@@ -6,9 +6,10 @@ import {
   useSortable,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { memo } from "react"
 import { SortableItem } from "./item"
 
-export default function EItem({
+const Draggable = ({
   className,
   children,
   data,
@@ -20,7 +21,7 @@ export default function EItem({
   className?: string
   index?: number
   colIndex?: number
-}) {
+}) => {
   const animateLayoutChanges: AnimateLayoutChanges = (args) =>
     defaultAnimateLayoutChanges({ ...args, wasDragging: true })
 
@@ -60,3 +61,5 @@ export default function EItem({
     </SortableItem>
   )
 }
+
+export default memo(Draggable)

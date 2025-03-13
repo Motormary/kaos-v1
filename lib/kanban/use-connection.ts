@@ -21,6 +21,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   const mainScrollX = mainRef.current?.scrollLeft ?? 0
   const mainScrollY = mainRef.current?.scrollTop ?? 0
   let isRemoteScroll = false
+  const isDraggingRef = useRef<true | false>(false)
 
   useEffect(() => {
     mainRef.current = document.querySelector("main")
@@ -87,13 +88,12 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         }
       }
       if (type === "scroll") {
-        const containerEl = document.getElementById(
-          scroll?.containerId as string,
-        )
+        const containerEl = document.getElementById(scroll?.containerId as string)
         if (containerEl) {
           //! PREVENT LOOP
           const viewEL = containerEl.children.item(1)
           if (viewEL) {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
             isRemoteScroll = true // Mark the next scroll as remote
             viewEL.scrollTo({
               top: scroll?.y,
@@ -115,6 +115,8 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       }
 
       if (type === "start") {
+        if (isDraggingRef.current) return
+        isDraggingRef.current = true
         console.log("start")
         const dragEl = document.getElementById(start?.itemId as string)
 
@@ -144,7 +146,6 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         clone.style.zIndex = "49"
         clone.classList.remove("backdrop-blur-md", "bg-background/40") //? Connected to line:22 @ item.tsx
         clone.classList.add("animate-pop", "bg-background")
-        clone.style.pointerEvents = "none"
         dragEl.classList.add("opacity-50")
       }
       if (type === "drag") {
@@ -152,11 +153,12 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         const cloneEl = document.getElementById(`${drag?.itemId}-clone`)
         const dragEl = document.getElementById(drag?.itemId as string)
         if (!cloneEl || !dragEl) return
-        const rect = dragEl.getBoundingClientRect()
-        const offsetX = rect.left + (x ?? 0)
-        const offsetY = rect.top + (y ?? 0)
-        cloneEl.style.left = `${offsetX + window.scrollX}px` //! + (container).scrollX
-        cloneEl.style.top = `${offsetY + window.scrollY}px`
+        // const dragRect = dragEl.getBoundingClientRect()
+        // const containerRect = containerEl?.getBoundingClientRect()
+        const offsetX = x ?? 0 + window.scrollX
+        const offsetY = y ?? 0 + window.scrollY
+        cloneEl.style.left = `${offsetX}px` //! + (container).scrollX
+        cloneEl.style.top = `${offsetY}px`
       }
       if (type === "cancel") {
         console.log("cancel")
@@ -165,16 +167,17 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         const containerEL = document.getElementById(overCol as string)
         if (!dragEl || !cloneEl) return
         if (cloneEl && containerEL) {
-          const containerRect = containerEL?.getBoundingClientRect()
+          const dragRect = dragEl.getBoundingClientRect()
           cloneEl.style.transition = "top 200ms ease, left 200ms ease"
-          cloneEl.style.left = `${containerRect.left + dragEl.offsetLeft}px`
-          cloneEl.style.top = `${containerRect.top + dragEl.offsetTop}px`
+          cloneEl.style.left = `${dragRect.left}px`
+          cloneEl.style.top = `${dragRect.top}px`
 
           // Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
 
           setTimeout(() => {
             cloneEl.remove()
             dragEl?.classList.remove("opacity-50")
+            isDraggingRef.current = false
           }, 200)
         }
       }
@@ -190,18 +193,17 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         }
         setCols(drop?.newState as ColumnProps[])
         /**
-         * #1 Makes sure column state can rerender
+         * Makes sure column state can rerender
          */
-        //! CHECK DELAY?
         setTimeout(() => {
           if (cloneEl) {
             const newEl = document.getElementById(drop?.itemId as string)
             const containerEL = document.getElementById(overCol as string)
             if (!newEl || !containerEL) return
-            const containerRect = containerEL.getBoundingClientRect()
+            const newRect = newEl.getBoundingClientRect()
             cloneEl.style.transition = "top 200ms ease, left 200ms ease"
-            cloneEl.style.left = `${containerRect.left + newEl.offsetLeft}px`
-            cloneEl.style.top = `${containerRect.top + newEl.offsetTop}px`
+            cloneEl.style.left = `${newRect.left}px`
+            cloneEl.style.top = `${newRect.top}px`
 
             /**
              * Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
@@ -209,6 +211,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
             setTimeout(() => {
               cloneEl.remove()
               dragEl?.classList.remove("opacity-50")
+              isDraggingRef.current = false
             }, 200)
           }
         }, 10 + latency)
@@ -304,11 +307,12 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
 
   const broadcastOperator = throttle(
     (event: React.PointerEvent<HTMLDivElement>) => {
+      const containerEl = document.getElementById(scrollContainer as string)
       msg({
         type: "move",
         move: { user: myname },
-        x: event.pageX + mainScrollX + window.scrollX,
-        y: event.pageY + mainScrollY + window.scrollY,
+        x: event.pageX + mainScrollX + window.scrollX + (containerEl?.scrollLeft ?? 0),
+        y: event.pageY + mainScrollY + window.scrollY + (containerEl?.scrollTop ?? 0),
       })
     },
     latency,
@@ -341,24 +345,36 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     }
   }, 100)
 
-  const broadcastDrag = throttle((event: DragMoveEvent) => {
-    msg({
-      type: "drag",
-      drag: { itemId: event?.active?.id as string },
-      x: event.delta.x,
-      y: event.delta.y,
-    })
-  }, latency)
+  const broadcastDrag = throttle(
+    (event: DragMoveEvent) => {
+      msg({
+        type: "drag",
+        drag: { itemId: event?.active?.id as string },
+        x: (event.active.rect.current.translated?.left ?? 0) + mainScrollX,
+        y: (event.active.rect.current.translated?.top ?? 0) + mainScrollY,
+      })
+    },
+    latency,
+    {
+      trailing: false,
+    },
+  )
 
-  function cancelDragBroadcast(event: DragCancelEvent) {
-    msg({
-      type: "cancel",
-      overCol: event.over?.data.current?.col,
-      cancel: {
-        itemId: event.active.id as string,
-      },
-    })
-  }
+  const cancelDragBroadcast = throttle(
+    (event: DragCancelEvent) => {
+      msg({
+        type: "cancel",
+        overCol: event.over?.data.current?.col,
+        cancel: {
+          itemId: event.active.id as string,
+        },
+      })
+    },
+    latency,
+    {
+      trailing: false,
+    },
+  )
 
   const endDragBroadcast = throttle(
     (event: DragCancelEvent, newState: ColumnProps[]) => {
@@ -372,23 +388,31 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       })
     },
     latency,
+    {
+      trailing: false,
+    },
   )
 
-  const startBroadcast = throttle((event: DragStartEvent) => {
-    checkAndSetStatus()
-    msg({
-      type: "start",
-      overCol: event.active.data.current?.col,
-      start: {
-        itemId: event.active.id as string,
-      },
-    })
-  }, latency)
+  const startBroadcast = throttle(
+    (event: DragStartEvent) => {
+      checkAndSetStatus()
+      msg({
+        type: "start",
+        overCol: event.active.data.current?.col,
+        start: {
+          itemId: event.active.id as string,
+        },
+      })
+    },
+    latency,
+    {
+      trailing: false,
+    },
+  )
 
-  function setOverRef(event: React.PointerEvent<HTMLDivElement>) {
-    const target = event.currentTarget as HTMLDivElement
-    if (target) {
-      setScrollContainer(target.id)
+  function setOverRef(id: string) {
+    if (id) {
+      setScrollContainer(id)
     }
   }
 
