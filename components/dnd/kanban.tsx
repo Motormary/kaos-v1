@@ -2,7 +2,7 @@
 
 import { initialColumns } from "@/lib/kanban/data"
 import { ColumnProps, ItemProps } from "@/lib/kanban/types"
-import useBroadCast from "@/lib/kanban/use-connection"
+import useBroadCast from "@/lib/kanban/use-broadcast"
 import { addToCol, removeFromCol, reorderItems } from "@/lib/kanban/utils"
 import {
   defaultDropAnimationSideEffects,
@@ -163,7 +163,7 @@ export default function KanbanBoard() {
     <div
       onPointerEnter={connectOperator}
       onPointerMove={broadcastOperator}
-      className="dnd-container relative z-50 mx-auto flex h-fit w-full flex-col overflow-hidden px-10 py-16"
+      className="dnd-container relative z-50 flex h-fit w-full flex-col overflow-hidden outline-2 outline-amber-500"
     >
       <ConnectionBar
         connectOperator={connectOperator}

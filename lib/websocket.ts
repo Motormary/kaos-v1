@@ -1,6 +1,6 @@
 import throttle from "lodash.throttle"
 import { MessageProps } from "./kanban/types"
-import { ws } from "./kanban/use-connection"
+import { ws } from "./kanban/use-broadcast"
 
 // export const ws = new WebSocket("ws://192.168.10.132:8000")
 

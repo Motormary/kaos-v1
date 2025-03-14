@@ -2,7 +2,7 @@
 /**
  * Ping/latency/lag/throttle
  */
-export const latency = 50
+export const latency = 0
 export const initialColumns = [
   {
     id: "Prospects",
