@@ -1,6 +1,7 @@
+"use client"
 import { ItemProps } from "@/lib/kanban/types"
 import { cn } from "@/lib/utils"
-import { forwardRef } from "react"
+import { forwardRef, memo } from "react"
 import { Badge } from "../ui/badge"
 
 interface sortableItemProps extends React.HTMLAttributes<HTMLLIElement> {
@@ -8,8 +9,29 @@ interface sortableItemProps extends React.HTMLAttributes<HTMLLIElement> {
   active?: boolean
 }
 
-export const SortableItem = forwardRef<HTMLLIElement, sortableItemProps>(
+const Item = forwardRef<HTMLLIElement, sortableItemProps>(
   ({ className, children, data, active, ...props }, ref) => {
+    /*   const getRandomColor = () => {
+      const colors = [
+        "stroke-red-500",
+        "stroke-orange-500",
+        "stroke-amber-500",
+        "stroke-yellow-500",
+        "stroke-lime-500",
+        "stroke-green-500",
+        "stroke-teal-500",
+        "stroke-cyan-500",
+        "stroke-blue-500",
+        "stroke-indigo-500",
+        "stroke-violet-500",
+        "stroke-purple-500",
+        "stroke-pink-500",
+        "stroke-rose-500",
+      ]
+      return colors[Math.floor(Math.random() * colors.length)]
+    } */
+
+    // TODO: TURN DATA ICONS INTO STRING AND GET ICONS HERE
     return (
       <li
         {...props}
@@ -24,7 +46,14 @@ export const SortableItem = forwardRef<HTMLLIElement, sortableItemProps>(
       >
         <div className="py-2">
           <PriorityBadge prio={data.prio} />
-          <p className="font-semibold">{data.title}</p>
+          <div className="flex items-center gap-2 font-semibold">
+            <span className="bg-muted-foreground dark:bg-muted rounded-full p-1 outline">
+              {data.icon ? (
+                <data.icon className={cn("size-4 stroke-emerald-400")} />
+              ) : null}
+            </span>{" "}
+            <p>{data.title}</p>
+          </div>
         </div>
         <div className="text-primary pb-5 text-sm">
           <p className="line-clamp-2">{data.body}</p>
@@ -35,7 +64,9 @@ export const SortableItem = forwardRef<HTMLLIElement, sortableItemProps>(
   },
 )
 
-SortableItem.displayName = "SortableItem"
+Item.displayName = "Item"
+
+export default memo(Item)
 
 function PriorityBadge({ prio }: { prio: number }) {
   const variant =

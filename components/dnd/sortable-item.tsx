@@ -7,7 +7,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { memo } from "react"
-import { SortableItem } from "./item"
+import Item from "./item"
 
 const Draggable = ({
   className,
@@ -42,7 +42,7 @@ const Draggable = ({
   }
 
   return (
-    <SortableItem
+    <Item
       id={data.id}
       ref={setNodeRef}
       {...attributes}
@@ -58,7 +58,7 @@ const Draggable = ({
       )}
     >
       {children}
-    </SortableItem>
+    </Item>
   )
 }
 

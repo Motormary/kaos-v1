@@ -1,3 +1,5 @@
+import { LucideProps } from "lucide-react"
+
 export type ItemProps = {
   id: string
   index: number
@@ -5,6 +7,7 @@ export type ItemProps = {
   title: string
   body: string
   prio: number
+  icon?: React.FC<LucideProps>
 }
 
 export type ColumnProps = {

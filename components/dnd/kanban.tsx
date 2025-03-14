@@ -22,7 +22,7 @@ import { MousePointer2 } from "lucide-react"
 import { useState } from "react"
 import ConnectionBar from "./connection-bar"
 import { DropContainer } from "./drop-container"
-import { SortableItem as Item } from "./item"
+import Item from "./item"
 import SortableItem from "./sortable-item"
 /* 
 todo: barrel imports

@@ -12,7 +12,7 @@ export const DropContainer = forwardRef<
     index: number
   }
 >(({ data, index, children, ...props }, ref) => {
-  const { setNodeRef } = useDroppable({
+  const { setNodeRef, active } = useDroppable({
     id: data.id,
     data: {
       colIndex: index,
@@ -36,7 +36,9 @@ export const DropContainer = forwardRef<
           id={data.id}
           ref={setNodeRef}
           className={cn(
-            "grid min-h-[85svh] min-w-[336px] content-start gap-2 p-2",
+            active?.data.current?.col === data.id &&
+              "bg-muted/10 dark:bg-muted/20",
+            "grid min-h-[85svh] min-w-[336px] content-start gap-2 p-2 transition-colors",
           )}
         >
           {children}

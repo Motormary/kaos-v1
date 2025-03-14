@@ -1,8 +1,9 @@
+import * as lucide from 'lucide-react';
 
 /**
  * Ping/latency/lag/throttle
  */
-export const latency = 0
+export const latency = 0;
 export const initialColumns = [
   {
     id: "Prospects",
@@ -13,7 +14,8 @@ export const initialColumns = [
         col: "Prospects",
         title: "Acme Corp",
         body: "Mid-sized manufacturing company exploring new suppliers.",
-        prio: 0
+        prio: 0,
+        icon: lucide.Zap,
       },
       {
         id: "item-2",
@@ -21,7 +23,8 @@ export const initialColumns = [
         col: "Prospects",
         title: "TechNova",
         body: "Innovative SaaS startup interested in scaling operations.",
-        prio: 1
+        prio: 1,
+        icon: lucide.Cpu,
       },
       {
         id: "item-3",
@@ -29,7 +32,8 @@ export const initialColumns = [
         col: "Prospects",
         title: "GreenFields Inc",
         body: "Agritech firm seeking sustainable solutions for farming.",
-        prio: 0
+        prio: 0,
+        icon: lucide.Leaf,
       },
     ].toSorted((a, b) => a.index - b.index),
   },
@@ -42,7 +46,8 @@ export const initialColumns = [
         col: "Leads",
         title: "Bright Solutions",
         body: "Energy company showing interest in a product demo.",
-        prio: 2
+        prio: 2,
+        icon: lucide.Sun,
       },
       {
         id: "item-5",
@@ -50,7 +55,8 @@ export const initialColumns = [
         col: "Leads",
         title: "MarketHive",
         body: "E-commerce platform evaluating potential partnerships.",
-        prio: 1
+        prio: 1,
+        icon: lucide.ShoppingCart,
       },
       {
         id: "item-6",
@@ -58,7 +64,8 @@ export const initialColumns = [
         col: "Leads",
         title: "NextGen Retail",
         body: "Retail chain considering a pilot for a new service.",
-        prio: 1
+        prio: 1,
+        icon: lucide.Store,
       },
     ].toSorted((a, b) => a.index - b.index),
   },
@@ -71,7 +78,8 @@ export const initialColumns = [
         col: "Contacted",
         title: "FutureTech",
         body: "Had an initial meeting to discuss project requirements.",
-        prio: 0
+        prio: 0,
+        icon: lucide.MessageSquare,
       },
       {
         id: "item-8",
@@ -79,7 +87,8 @@ export const initialColumns = [
         col: "Contacted",
         title: "EcoBuild Co",
         body: "Sent proposal and awaiting feedback.",
-        prio: 2
+        prio: 2,
+        icon: lucide.FileText,
       },
       {
         id: "item-9",
@@ -87,9 +96,9 @@ export const initialColumns = [
         col: "Contacted",
         title: "SkyNet Logistics",
         body: "Followed up after demo; interest in pricing options.",
-        prio: 0
+        prio: 0,
+        icon: lucide.Truck,
       },
     ].toSorted((a, b) => a.index - b.index),
   },
 ];
-
