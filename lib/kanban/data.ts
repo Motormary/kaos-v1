@@ -11,22 +11,25 @@ export const initialColumns = [
         id: "item-1",
         index: 1,
         col: "Prospects",
-        title: "Silje 💗",
-        body: "The capital city of Norway, known for its green spaces.",
+        title: "Acme Corp",
+        body: "Mid-sized manufacturing company exploring new suppliers.",
+        prio: 0
       },
       {
         id: "item-2",
         index: 0,
         col: "Prospects",
-        title: "Bergen",
-        body: "A coastal city surrounded by mountains and fjords.",
+        title: "TechNova",
+        body: "Innovative SaaS startup interested in scaling operations.",
+        prio: 1
       },
       {
         id: "item-3",
         index: 2,
         col: "Prospects",
-        title: "Trondheim",
-        body: "Home to the Nidaros Cathedral and rich Viking history.",
+        title: "GreenFields Inc",
+        body: "Agritech firm seeking sustainable solutions for farming.",
+        prio: 0
       },
     ].toSorted((a, b) => a.index - b.index),
   },
@@ -37,22 +40,25 @@ export const initialColumns = [
         id: "item-4",
         index: 0,
         col: "Leads",
-        title: "Tromsø",
-        body: "A city known for its Northern Lights and Arctic adventures.",
+        title: "Bright Solutions",
+        body: "Energy company showing interest in a product demo.",
+        prio: 2
       },
       {
         id: "item-5",
         index: 1,
         col: "Leads",
-        title: "Kristiansand",
-        body: "A southern city famous for its beaches and zoo.",
+        title: "MarketHive",
+        body: "E-commerce platform evaluating potential partnerships.",
+        prio: 1
       },
       {
         id: "item-6",
         index: 2,
         col: "Leads",
-        title: "Ålesund",
-        body: "Known for its Art Nouveau architecture and coastal beauty.",
+        title: "NextGen Retail",
+        body: "Retail chain considering a pilot for a new service.",
+        prio: 1
       },
     ].toSorted((a, b) => a.index - b.index),
   },
@@ -63,23 +69,27 @@ export const initialColumns = [
         id: "item-7",
         index: 0,
         col: "Contacted",
-        title: "Haugesund",
-        body: "A historical city known for Viking heritage.",
+        title: "FutureTech",
+        body: "Had an initial meeting to discuss project requirements.",
+        prio: 0
       },
       {
         id: "item-8",
         index: 1,
         col: "Contacted",
-        title: "Narvik",
-        body: "A scenic town with a rich WWII history.",
+        title: "EcoBuild Co",
+        body: "Sent proposal and awaiting feedback.",
+        prio: 2
       },
       {
         id: "item-9",
         index: 2,
         col: "Contacted",
-        title: "Hammerfest",
-        body: "One of the northernmost towns in the world.",
+        title: "SkyNet Logistics",
+        body: "Followed up after demo; interest in pricing options.",
+        prio: 0
       },
     ].toSorted((a, b) => a.index - b.index),
   },
-]
+];
+

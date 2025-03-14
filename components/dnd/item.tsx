@@ -23,9 +23,7 @@ export const SortableItem = forwardRef<HTMLLIElement, sortableItemProps>(
         )}
       >
         <div className="py-2">
-          <Badge variant={"destructive"} className="float-right ms-2">
-            High prio
-          </Badge>
+          <PriorityBadge prio={data.prio} />
           <p className="font-semibold">{data.title}</p>
         </div>
         <div className="text-primary pb-5 text-sm">
@@ -38,3 +36,15 @@ export const SortableItem = forwardRef<HTMLLIElement, sortableItemProps>(
 )
 
 SortableItem.displayName = "SortableItem"
+
+function PriorityBadge({ prio }: { prio: number }) {
+  const variant =
+    prio === 0 ? "outline" : prio === 1 ? "default" : "destructive"
+  const text = prio === 0 ? "Low prio" : prio === 1 ? "Mid prio" : "High prio"
+
+  return (
+    <Badge variant={variant} className="float-right ms-2">
+      {text}
+    </Badge>
+  )
+}

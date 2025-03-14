@@ -17,22 +17,22 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core"
-import { restrictToWindowEdges } from "@dnd-kit/modifiers"
 import { SortableContext } from "@dnd-kit/sortable"
 import { MousePointer2 } from "lucide-react"
 import { useState } from "react"
+import ConnectionBar from "./connection-bar"
 import { DropContainer } from "./drop-container"
 import { SortableItem as Item } from "./item"
 import SortableItem from "./sortable-item"
-import ConnectionBar from "./connection-bar"
 /* 
-todo: barrel export
+todo: barrel imports
 todo: Reduce rerendering (memo, callbacks?)
 todo: Add/remove function for columns/items
 todo: use refs for state
+todo: handle auto-connect better
 // !bug: fix restrict to window issue, item cannot be sorted to the bottom easily
 // !bug: if remote user has a larger screen the current user can drag out of bounds and get draggable clone stuck 
-!bug: make empty part of bottom of container droppable
+!bug: make empty bottom of source-column droppable
  */
 
 export default function KanbanBoard() {
@@ -67,7 +67,7 @@ export default function KanbanBoard() {
     if (over) setOverRef(document.getElementById(over?.col) ?? null) // dependency of remote animation @ useBroadcast.ts
 
     /**
-     * If hovered column is not start-column, add the dragged item to hovered column and remove it from previous
+     * If hovered column is not the source-column, add the dragged item to hovered column and remove it from previous
      */
     if (targetColId !== sourceColId) {
       const newCols = cols.map((col) => {
@@ -152,8 +152,8 @@ export default function KanbanBoard() {
   const touchSensor = useSensor(TouchSensor, {
     activationConstraint: {
       delay: 300,
-      tolerance: 100,
-      distance: 200,
+      distance: 50,
+      tolerance: 0,
     },
   })
   const mouseSensor = useSensor(MouseSensor)
@@ -163,7 +163,7 @@ export default function KanbanBoard() {
     <div
       onPointerEnter={connectOperator}
       onPointerMove={broadcastOperator}
-      className="dnd-container relative z-50 flex h-fit w-full flex-col overflow-hidden outline-2 outline-amber-500"
+      className="dnd-container relative z-50 flex flex-col overflow-x-hidden overflow-y-hidden"
     >
       <ConnectionBar
         connectOperator={connectOperator}
@@ -172,7 +172,6 @@ export default function KanbanBoard() {
         users={users}
       />
       <DndContext
-        modifiers={[restrictToWindowEdges]}
         sensors={sensors}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
@@ -180,7 +179,7 @@ export default function KanbanBoard() {
         onDragMove={broadcastDrag}
         onDragCancel={(e) => endDragBroadcast(e, cols)}
       >
-        <div className="flex">
+        <div className="dnd-columns flex overflow-x-auto">
           {cols.map((col, colIndex) => {
             return (
               <SortableContext key={col.id} items={col.items}>
@@ -238,7 +237,7 @@ export default function KanbanBoard() {
               className="pointer-events-none absolute z-50 w-fit"
             >
               <MousePointer2 className="fill-emerald-300 stroke-emerald-900" />{" "}
-              <div className="w-fit translate-x-5 translate-y-[-0.25rem] rounded-sm border bg-emerald-200 px-1 py-0.5 text-xs">
+              <div className="w-full translate-x-5 translate-y-[-0.25rem] rounded-sm border bg-emerald-200 px-1 py-0.5 text-xs whitespace-nowrap text-black">
                 {user}
               </div>
             </div>

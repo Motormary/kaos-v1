@@ -4,6 +4,7 @@ export type ItemProps = {
   col: string
   title: string
   body: string
+  prio: number
 }
 
 export type ColumnProps = {
@@ -36,7 +37,7 @@ export type MessageProps = {
     }
     connect?: {
       user: string
-      time: Date
+      connectedAt: Date
     }
     disconnect?: {
       user: string

@@ -18,8 +18,6 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   >("disconnected")
   const mainRef = useRef<HTMLElement | null>(null)
   const scrollRef = useRef<HTMLElement | null>(null)
-  const mainScrollX = mainRef.current?.scrollLeft ?? 0
-  const mainScrollY = mainRef.current?.scrollTop ?? 0
   const isDraggingRef = useRef<true | false>(false)
 
   useEffect(() => {
@@ -45,8 +43,8 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       const {
         remoteClient,
         message: {
-          currentUsers,
           type,
+          currentUsers,
           connect,
           disconnect,
           start,
@@ -60,13 +58,16 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         },
       }: MessageProps = JSON.parse(event.data)
 
+      // Check if remote client is already connected
       const isConnected = users?.some(
         (user) => user?.toLowerCase() === remoteClient.toLowerCase(),
       )
 
+      // this a response received by the backend when the user successfully connects to a new socket containing currently connected users.
       if (type === "connected" && currentUsers?.length) {
         setUsers(currentUsers as string[])
       }
+
       if (type === "connect") {
         if (isConnected) {
           return
@@ -76,12 +77,8 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       }
 
       if (type === "disconnect") {
-        if (
-          users?.some(
-            (user) => user?.toLowerCase() === remoteClient.toLowerCase(),
-          )
-        ) {
-          console.log("disconnecting user:", remoteClient)
+        if (isConnected) {
+          console.info("disconnecting user:", remoteClient)
           setUsers((prev) => prev.filter((user) => user !== remoteClient))
         }
       }
@@ -102,11 +99,14 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       }
       if (type === "move") {
         const mouse = document?.getElementById(remoteClient)
-        const scrollContainer = document.getElementById(move?.overCol as string)
-        const viewPortEl = scrollContainer?.children.item(1)
+        const scrollYContainer = document.getElementById(
+          move?.overCol as string,
+        )
+        const scrollXContainer = document.querySelector("div.dnd-columns")
+        const viewPortEl = scrollYContainer?.children.item(1)
 
         if (!mouse) return
-        const offsetX = (x ?? 0) - 3.5 - (viewPortEl?.scrollLeft ?? 0) // the 3.5px are to adjust for the svg pointer position
+        const offsetX = (x ?? 0) - 3.5 - (viewPortEl?.scrollLeft ?? 0) - (scrollXContainer?.scrollLeft ?? 0) // the 3.5px are to adjust for the svg pointer position
         const offsetY = (y ?? 0) - 3.5 - (viewPortEl?.scrollTop ?? 0)
         mouse.style.transition = "top 0ms linear, left 0ms linear"
         mouse.style.left = `${offsetX}px`
@@ -116,11 +116,10 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       if (type === "start") {
         if (isDraggingRef.current) return
         isDraggingRef.current = true
-        console.log("start")
+        console.info("start")
         const dragEl = document.getElementById(start?.itemId as string)
         if (!dragEl) return
         const rect = dragEl.getBoundingClientRect()
-        console.log("🚀 ~ handleWebsocketMsg ~ rect:", rect)
         const clone = dragEl.cloneNode(true) as HTMLElement
         const dndContainer = document.querySelector("div.dnd-container")
         dndContainer?.appendChild(clone)
@@ -140,19 +139,21 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         dragEl.classList.add("opacity-50")
       }
       if (type === "drag") {
-        console.log("drag")
+        console.info("drag")
         const cloneEl = document.getElementById(`${drag?.itemId}-clone`)
         const dragEl = document.getElementById(drag?.itemId as string)
         const dndContainer = document.querySelector("div.dnd-container")
         const dndRect = dndContainer?.getBoundingClientRect()
+        const scrollXContainer = document.querySelector("div.dnd-columns")
+
         if (!cloneEl || !dragEl) return
-        const offsetX = (x ?? 0) - window.scrollX - (dndRect?.left ?? 0)
+        const offsetX = (x ?? 0) - window.scrollX - (dndRect?.left ?? 0) - (scrollXContainer?.scrollLeft ?? 0)
         const offsetY = (y ?? 0) - window.scrollY - (dndRect?.top ?? 0)
         cloneEl.style.left = `${offsetX}px`
         cloneEl.style.top = `${offsetY}px`
       }
       if (type === "cancel") {
-        console.log("cancel")
+        console.info("cancel")
         const dragEl = document.getElementById(cancel?.itemId as string)
         const cloneEl = document.getElementById(`${cancel?.itemId}-clone`)
         const dndContainer = document.querySelector("div.dnd-container")
@@ -175,7 +176,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         }
       }
       if (type === "drop") {
-        console.log("drop")
+        console.info("drop")
         const dragEl = document.getElementById(drop?.itemId as string)
         const cloneEl = document.getElementById(`${drop?.itemId}-clone`)
         const dndContainer = document.querySelector("div.dnd-container")
@@ -281,7 +282,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         type: "connect",
         connect: {
           user: myname,
-          time: new Date(),
+          connectedAt: new Date(),
         },
       })
     }, 1000)
@@ -289,14 +290,9 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
 
   function disconnectOperator() {
     if (ws === null) return
-
-    msg({
-      type: "disconnect",
-      disconnect: {
-        user: myname,
-      },
-    })
+    // Backend will tell all the connected clients to remove current user from their workspace.
     ws.close()
+    setUsers([])
     checkAndSetStatus()
   }
 
@@ -304,6 +300,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     (event: React.PointerEvent<HTMLDivElement>) => {
       const containerEl = document.getElementById(scrollRef.current?.id ?? "")
       const dndEl = document.querySelector("div.dnd-container")
+      const scrollXContainer = document.querySelector("div.dnd-columns")
       const dndRect = dndEl?.getBoundingClientRect()
       const viewPortEl = containerEl?.children.item(1)
 
@@ -312,7 +309,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         move: { user: myname, overCol: scrollRef.current?.id },
         x:
           event.clientX + // cursor position inside dnd-container (container is relative)
-          (viewPortEl?.scrollLeft ?? 0) - // adjust for scrollable containers scroll position (this is just a failsafe, they should not be able to scroll X)
+          (viewPortEl?.scrollLeft ?? 0) + (scrollXContainer?.scrollLeft ?? 0) - // adjust for scrollable containers scroll position (this is just a failsafe, they should not be able to scroll X)
           (dndRect?.left ?? 0), // adjust for dnd-containers offset
         y: event.clientY + (viewPortEl?.scrollTop ?? 0) - (dndRect?.top ?? 0),
       })
@@ -326,8 +323,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   const broadcastDrag = throttle(
     (event: DragMoveEvent) => {
       const containerEl = document.getElementById(scrollRef.current?.id ?? "")
-      console.log("🚀 ~ useBroadCast ~ scrollContainer:", scrollRef.current?.id)
-      console.log("🚀 ~ useBroadCast ~ containerEl:", containerEl?.id)
+      const scrollXContainer = document.querySelector("div.dnd-columns")
       const viewPortEl = containerEl?.children.item(1)
       msg({
         type: "drag",
@@ -338,6 +334,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         x:
           (event.active.rect.current.translated?.left ?? 0) +
           (viewPortEl?.scrollLeft ?? 0) +
+          (scrollXContainer?.scrollLeft ?? 0) +
           window.scrollX,
         y:
           (event.active.rect.current.translated?.top ?? 0) +

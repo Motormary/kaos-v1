@@ -23,7 +23,7 @@ export default function ConnectionBar({
   users,
 }: connectionProps) {
   return (
-    <div className="flex items-baseline justify-between gap-4">
+    <div className="flex w-full items-baseline justify-between gap-4">
       {connectionStatus === "connected" ? (
         <Button
           className="my-2 w-fit"
