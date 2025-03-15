@@ -28,8 +28,10 @@ export type MessageProps = {
       | "drop"
       | "cancel"
       | "scroll"
+      | "newState"
     x?: number
     y?: number
+    newState?: ColumnProps[]
     currentUsers?: string[]
     overCol?: string
     scroll?: {

@@ -4,14 +4,17 @@ import { useDroppable } from "@dnd-kit/core"
 import { ScrollArea, ScrollBar } from "../ui/scroll-area"
 import { forwardRef } from "react"
 import { ScrollAreaProps } from "@radix-ui/react-scroll-area"
+import { Button } from "../ui/button"
+import { Plus } from "lucide-react"
 
 export const DropContainer = forwardRef<
   HTMLDivElement,
   ScrollAreaProps & {
     data: ColumnProps
     index: number
+    handleAddItem: (columnId: string) => void
   }
->(({ data, index, children, ...props }, ref) => {
+>(({ data, index, children, handleAddItem, ...props }, ref) => {
   const { setNodeRef, active } = useDroppable({
     id: data.id,
     data: {
@@ -23,9 +26,18 @@ export const DropContainer = forwardRef<
 
   return (
     <div className="border" draggable={false}>
-      <p className="text-primary bg-muted/50 p-2.5 text-center text-3xl font-bold">
-        {data.id}
-      </p>
+      <div className="bg-muted/50 p-2.5 select-none">
+        <Button
+          variant="ghost"
+          onClick={() => handleAddItem(data.id)}
+          className="float-right mt-0.5 h-fit cursor-pointer p-2"
+        >
+          <Plus />
+        </Button>
+        <p className="text-primary mx-auto w-fit text-3xl font-bold">
+          {data.id}
+        </p>
+      </div>
       <ScrollArea
         id={data.id}
         ref={ref}

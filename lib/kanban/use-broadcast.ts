@@ -52,7 +52,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
           drop,
           cancel,
           move,
-          scroll,
+          newState,
           x,
           y,
         },
@@ -82,21 +82,11 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
           setUsers((prev) => prev.filter((user) => user !== remoteClient))
         }
       }
-      if (type === "scroll") {
-        const containerEl = document.getElementById(
-          scroll?.containerId as string,
-        )
-        if (containerEl) {
-          //! PREVENT LOOP
-          const viewEL = containerEl.children.item(1)
-          if (viewEL) {
-            viewEL.scrollTo({
-              top: scroll?.y,
-              behavior: "instant",
-            })
-          }
-        }
+
+      if (type === "newState" && newState) {
+        setCols(newState)
       }
+
       if (type === "move") {
         const mouse = document?.getElementById(remoteClient)
         const scrollYContainer = document.getElementById(
@@ -181,7 +171,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
             cloneEl.remove()
             dragEl?.classList.remove("opacity-50")
             dragEl.style.pointerEvents = "auto"
-            
+
             isDraggingRef.current = false
           }, 200)
         }
@@ -414,6 +404,19 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     },
   )
 
+  const broadcastNewState = throttle(
+    (cols: ColumnProps[]) => {
+      msg({
+        type: "newState",
+        newState: cols,
+      })
+    },
+    latency,
+    {
+      trailing: false,
+    },
+  )
+
   function setOverRef(event: HTMLElement | null) {
     scrollRef.current = event
   }
@@ -444,5 +447,6 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     startBroadcast,
     deployAgent, // remote drag-image cleaner
     setOverRef,
+    broadcastNewState,
   }
 }

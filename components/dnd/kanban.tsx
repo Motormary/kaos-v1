@@ -53,6 +53,7 @@ export default function KanbanBoard() {
     startBroadcast,
     disconnectOperator,
     setOverRef,
+    broadcastNewState,
   } = useBroadCast(setCols)
 
   function handleDragOver(
@@ -162,6 +163,33 @@ export default function KanbanBoard() {
   const mouseSensor = useSensor(MouseSensor)
   const sensors = useSensors(keyboardSensor, mouseSensor, touchSensor)
 
+  function handleAddItem(columnId: string) {
+    const newCols = cols.map((col) => {
+      if (col.id === columnId) {
+        return {
+          ...col,
+          items: [
+            ...col.items,
+            {
+              id: Math.random().toString(),
+              index: col.items.length,
+              col: columnId,
+              title: "New item!",
+              body: "Successfully added new item.",
+              prio: 2,
+              icon: "Trophy",
+              value: 100000,
+            },
+          ],
+        }
+      }
+      return col
+    })
+
+    setCols(newCols)
+    broadcastNewState(newCols)
+  }
+
   return (
     <div
       onPointerEnter={connectOperator}
@@ -187,6 +215,7 @@ export default function KanbanBoard() {
             return (
               <SortableContext key={col.id} items={col.items}>
                 <DropContainer
+                  handleAddItem={handleAddItem}
                   onPointerEnter={(e) => setOverRef(e.currentTarget)}
                   index={colIndex}
                   data={col}
