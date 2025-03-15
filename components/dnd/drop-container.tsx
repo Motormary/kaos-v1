@@ -22,7 +22,7 @@ export const DropContainer = forwardRef<
   })
 
   return (
-    <div className="border">
+    <div className="border" draggable={false}>
       <p className="text-primary bg-muted/50 p-2.5 text-center text-3xl font-bold">
         {data.id}
       </p>
@@ -33,6 +33,7 @@ export const DropContainer = forwardRef<
         className="h-[85svh] px-0.5"
       >
         <ul
+          draggable={false}
           id={data.id}
           ref={setNodeRef}
           className={cn(

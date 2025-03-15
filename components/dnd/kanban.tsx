@@ -30,9 +30,12 @@ todo: Reduce rerendering (memo, callbacks?)
 todo: Add/remove function for columns/items
 todo: use refs for state
 todo: handle auto-connect better
+todo: refactor/clean up broadcast hook
 // !bug: fix restrict to window issue, item cannot be sorted to the bottom easily
 // !bug: if remote user has a larger screen the current user can drag out of bounds and get draggable clone stuck 
+// !bug: disable item for remote users when item is dragging
 !bug: make empty bottom of source-column droppable
+!bug: cloneEl needs an unique id. Atm no more than 1 remote user can display clone
  */
 
 export default function KanbanBoard() {
@@ -163,7 +166,7 @@ export default function KanbanBoard() {
     <div
       onPointerEnter={connectOperator}
       onPointerMove={broadcastOperator}
-      className="dnd-container relative z-50 flex flex-col overflow-x-hidden overflow-y-hidden"
+      className="dnd-container relative z-50 flex flex-col overflow-x-hidden overflow-y-hidden p-1"
     >
       <ConnectionBar
         connectOperator={connectOperator}

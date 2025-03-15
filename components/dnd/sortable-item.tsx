@@ -48,6 +48,7 @@ const Draggable = ({
       {...attributes}
       {...listeners}
       style={style}
+      draggable={false}
       data={data}
       aria-describedby={`DndDescribeBy-${index}`}
       className={cn(

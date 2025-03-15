@@ -1,5 +1,3 @@
-import * as lucide from 'lucide-react';
-
 /**
  * Ping/latency/lag/throttle
  */
@@ -15,7 +13,8 @@ export const initialColumns = [
         title: "Acme Corp",
         body: "Mid-sized manufacturing company exploring new suppliers.",
         prio: 0,
-        icon: lucide.Zap,
+        icon: "Zap",
+        value: 100000,
       },
       {
         id: "item-2",
@@ -24,7 +23,8 @@ export const initialColumns = [
         title: "TechNova",
         body: "Innovative SaaS startup interested in scaling operations.",
         prio: 1,
-        icon: lucide.Cpu,
+        icon: "Cpu",
+        value: 100000,
       },
       {
         id: "item-3",
@@ -33,7 +33,8 @@ export const initialColumns = [
         title: "GreenFields Inc",
         body: "Agritech firm seeking sustainable solutions for farming.",
         prio: 0,
-        icon: lucide.Leaf,
+        icon: "Leaf",
+        value: 100000,
       },
     ].toSorted((a, b) => a.index - b.index),
   },
@@ -47,7 +48,8 @@ export const initialColumns = [
         title: "Bright Solutions",
         body: "Energy company showing interest in a product demo.",
         prio: 2,
-        icon: lucide.Sun,
+        icon: "Sun",
+        value: 100000,
       },
       {
         id: "item-5",
@@ -56,7 +58,8 @@ export const initialColumns = [
         title: "MarketHive",
         body: "E-commerce platform evaluating potential partnerships.",
         prio: 1,
-        icon: lucide.ShoppingCart,
+        icon: "ShoppingCart",
+        value: 100000,
       },
       {
         id: "item-6",
@@ -65,7 +68,8 @@ export const initialColumns = [
         title: "NextGen Retail",
         body: "Retail chain considering a pilot for a new service.",
         prio: 1,
-        icon: lucide.Store,
+        icon: "Store",
+        value: 100000,
       },
     ].toSorted((a, b) => a.index - b.index),
   },
@@ -79,7 +83,8 @@ export const initialColumns = [
         title: "FutureTech",
         body: "Had an initial meeting to discuss project requirements.",
         prio: 0,
-        icon: lucide.MessageSquare,
+        icon: "MessageSquare",
+        value: 100000,
       },
       {
         id: "item-8",
@@ -88,7 +93,8 @@ export const initialColumns = [
         title: "EcoBuild Co",
         body: "Sent proposal and awaiting feedback.",
         prio: 2,
-        icon: lucide.FileText,
+        icon: "FileText",
+        value: 100000,
       },
       {
         id: "item-9",
@@ -97,7 +103,8 @@ export const initialColumns = [
         title: "SkyNet Logistics",
         body: "Followed up after demo; interest in pricing options.",
         prio: 0,
-        icon: lucide.Truck,
+        icon: "Truck",
+        value: 100000,
       },
     ].toSorted((a, b) => a.index - b.index),
   },

@@ -106,7 +106,11 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         const viewPortEl = scrollYContainer?.children.item(1)
 
         if (!mouse) return
-        const offsetX = (x ?? 0) - 3.5 - (viewPortEl?.scrollLeft ?? 0) - (scrollXContainer?.scrollLeft ?? 0) // the 3.5px are to adjust for the svg pointer position
+        const offsetX =
+          (x ?? 0) -
+          3.5 -
+          (viewPortEl?.scrollLeft ?? 0) -
+          (scrollXContainer?.scrollLeft ?? 0) // the 3.5px are to adjust for the svg pointer position
         const offsetY = (y ?? 0) - 3.5 - (viewPortEl?.scrollTop ?? 0)
         mouse.style.transition = "top 0ms linear, left 0ms linear"
         mouse.style.left = `${offsetX}px`
@@ -119,6 +123,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         console.info("start")
         const dragEl = document.getElementById(start?.itemId as string)
         if (!dragEl) return
+        dragEl.style.pointerEvents = "none"
         const rect = dragEl.getBoundingClientRect()
         const clone = dragEl.cloneNode(true) as HTMLElement
         const dndContainer = document.querySelector("div.dnd-container")
@@ -147,7 +152,11 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         const scrollXContainer = document.querySelector("div.dnd-columns")
 
         if (!cloneEl || !dragEl) return
-        const offsetX = (x ?? 0) - window.scrollX - (dndRect?.left ?? 0) - (scrollXContainer?.scrollLeft ?? 0)
+        const offsetX =
+          (x ?? 0) -
+          window.scrollX -
+          (dndRect?.left ?? 0) -
+          (scrollXContainer?.scrollLeft ?? 0)
         const offsetY = (y ?? 0) - window.scrollY - (dndRect?.top ?? 0)
         cloneEl.style.left = `${offsetX}px`
         cloneEl.style.top = `${offsetY}px`
@@ -171,6 +180,8 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
           setTimeout(() => {
             cloneEl.remove()
             dragEl?.classList.remove("opacity-50")
+            dragEl.style.pointerEvents = "auto"
+            
             isDraggingRef.current = false
           }, 200)
         }
@@ -186,6 +197,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
             "Error in (cancel): Missing params => dragEl:",
             drag?.itemId,
           )
+          return
         }
         setCols(drop?.newState as ColumnProps[])
         /**
@@ -207,6 +219,8 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
             setTimeout(() => {
               cloneEl.remove()
               dragEl?.classList.remove("opacity-50")
+              dragEl.style.pointerEvents = "auto"
+
               isDraggingRef.current = false
             }, 200)
           }
@@ -309,7 +323,8 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         move: { user: myname, overCol: scrollRef.current?.id },
         x:
           event.clientX + // cursor position inside dnd-container (container is relative)
-          (viewPortEl?.scrollLeft ?? 0) + (scrollXContainer?.scrollLeft ?? 0) - // adjust for scrollable containers scroll position (this is just a failsafe, they should not be able to scroll X)
+          (viewPortEl?.scrollLeft ?? 0) +
+          (scrollXContainer?.scrollLeft ?? 0) - // adjust for scrollable containers scroll position (this is just a failsafe, they should not be able to scroll X)
           (dndRect?.left ?? 0), // adjust for dnd-containers offset
         y: event.clientY + (viewPortEl?.scrollTop ?? 0) - (dndRect?.top ?? 0),
       })
