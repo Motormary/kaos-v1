@@ -1,11 +1,11 @@
 import { ColumnProps } from "@/lib/kanban/types"
 import { cn } from "@/lib/utils"
 import { useDroppable } from "@dnd-kit/core"
-import { ScrollArea, ScrollBar } from "../ui/scroll-area"
-import { forwardRef, useEffect, useState } from "react"
 import { ScrollAreaProps } from "@radix-ui/react-scroll-area"
-import { Button } from "../ui/button"
 import { Plus } from "lucide-react"
+import { forwardRef } from "react"
+import { Button } from "../ui/button"
+import { ScrollArea, ScrollBar } from "../ui/scroll-area"
 
 export const DropContainer = forwardRef<
   HTMLDivElement,

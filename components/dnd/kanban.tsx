@@ -25,6 +25,7 @@ import { DropContainer } from "./drop-container"
 import Item from "./item"
 import SortableItem from "./sortable-item"
 /* 
+?: If you're experience performance issues in dev mode; try turning off ReactStrictMode.
 todo: barrel imports
 todo: Reduce rerendering (memo, callbacks?)
 todo: Add/remove function for columns/items
@@ -56,38 +57,41 @@ export default function KanbanBoard() {
     broadcastNewState,
   } = useBroadCast(setCols)
 
-  function handleDragOver(
-    e: DragOverEvent & {
-      activatorEvent: {
-        clientX: number
-        clientY: number
-      }
-    },
-  ) {
-    if (!e.over?.data?.current || !activeItem) return
-    const sourceColId = activeItem.col
-    const targetColId = e.over.data.current.col
-    const over = e.over.data.current as ItemProps & { type: "item" | "drop" }
-
-    /**
-     * If hovered column is not the source-column, add the dragged item to hovered column and remove it from previous
-     */
-    if (targetColId !== sourceColId) {
-      const newCols = cols.map((col) => {
-        if (col.id === over.col) {
-          const newItem = { ...activeItem }
-          newItem.index = col.items.length
-          newItem.col = col.id
-          setActiveItem(newItem)
-          return addToCol(col, activeItem)
-        } else {
-          return removeFromCol(col, activeItem.id)
+  const handleDragOver = useCallback(
+    (
+      e: DragOverEvent & {
+        activatorEvent: {
+          clientX: number
+          clientY: number
         }
-      })
-      setCols(newCols)
-    }
-    if (over) setOverRef(document.getElementById(over?.col) ?? null) // dependency of remote animation @ useBroadcast.ts
-  }
+      },
+    ) => {
+      if (!e.over?.data?.current || !activeItem) return
+      const sourceColId = activeItem.col
+      const targetColId = e.over.data.current.col
+      const over = e.over.data.current as ItemProps & { type: "item" | "drop" }
+
+      /**
+       * If hovered column is not the source-column, add the dragged item to hovered column and remove it from previous
+       */
+      if (targetColId !== sourceColId) {
+        const newCols = cols.map((col) => {
+          if (col.id === over.col) {
+            const newItem = { ...activeItem }
+            newItem.index = col.items.length
+            newItem.col = col.id
+            setActiveItem(newItem)
+            return addToCol(col, activeItem)
+          } else {
+            return removeFromCol(col, activeItem.id)
+          }
+        })
+        setCols(newCols)
+      }
+      if (over) setOverRef(document.getElementById(over?.col) ?? null) // dependency of remote animation @ useBroadcast.ts
+    },
+    [activeItem, cols, setOverRef],
+  )
 
   function handleDragStart(event: DragStartEvent) {
     startBroadcast(event) // Will connect user to websocket on dragStart (dev purposes)
