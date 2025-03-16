@@ -14,6 +14,7 @@ type connectionProps = {
   connectOperator: () => void
   disconnectOperator: () => void
   users: string[]
+  setOverRef: (target: null) => void
 }
 
 export default function ConnectionBar({
@@ -21,9 +22,13 @@ export default function ConnectionBar({
   connectOperator,
   disconnectOperator,
   users,
+  setOverRef,
 }: connectionProps) {
   return (
-    <div className="flex w-full items-baseline justify-between gap-4">
+    <div
+      onPointerEnter={() => setOverRef(null)}
+      className="flex w-full items-baseline justify-between gap-4"
+    >
       {connectionStatus === "connected" ? (
         <Button
           className="my-2 w-fit"
