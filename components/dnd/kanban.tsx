@@ -21,7 +21,7 @@ import { SortableContext } from "@dnd-kit/sortable"
 import { MousePointer2 } from "lucide-react"
 import { useCallback, useState } from "react"
 import ConnectionBar from "./connection-bar"
-import { DropContainer } from "./drop-container"
+import DropContainer from "./drop-container"
 import Item from "./item"
 import SortableItem from "./sortable-item"
 /* 
@@ -165,6 +165,7 @@ export default function KanbanBoard() {
       cancel: ["Escape"],
       end: ["Enter"],
     },
+    scrollBehavior: "instant",
   })
 
   const touchSensor = useSensor(TouchSensor, {
@@ -263,6 +264,7 @@ export default function KanbanBoard() {
                 active: {
                   opacity: "0.5",
                 },
+                /* Smoother drop/cancel animation for scaling */
                 dragOverlay: {
                   translate: "-5px -3px",
                   transition: "translate 200ms ease",

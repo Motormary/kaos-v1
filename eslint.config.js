@@ -7,6 +7,7 @@ import globals from "globals"
 import tseslint from "typescript-eslint"
 import onlyWarn from "eslint-plugin-only-warn"
 import unused from "eslint-plugin-unused-imports"
+import reactCompiler from "eslint-plugin-react-compiler"
 
 /**
  * A custom ESLint configuration for libraries that use Next.js.
@@ -29,6 +30,7 @@ export default tseslint.config(
   {
     plugins: {
       "@next/next": pluginNext,
+      "react-compiler": reactCompiler,
       "unused-imports": unused,
     },
     rules: {
@@ -51,7 +53,7 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-require-imports": "error",
       "unused-imports/no-unused-imports": "warn",
+      "react-compiler/react-compiler": "error",
     },
   },
 )
-

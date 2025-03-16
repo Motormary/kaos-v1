@@ -18,6 +18,9 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    reactCompiler: true // Gotta go fast 🦔
+  }
 }
 
 export default nextConfig

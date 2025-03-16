@@ -1,8 +1,8 @@
-import type { Metadata } from "next"
 import localFont from "next/font/local"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ModeToggle } from "@/components/theme-toggle-button"
+import { Metadata } from "next/types"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/*         <script
+        {/* <script
           async
           crossOrigin="anonymous"
           src="//unpkg.com/react-scan/dist/auto.global.js"

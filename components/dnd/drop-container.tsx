@@ -3,11 +3,11 @@ import { cn } from "@/lib/utils"
 import { useDroppable } from "@dnd-kit/core"
 import { ScrollAreaProps } from "@radix-ui/react-scroll-area"
 import { Plus } from "lucide-react"
-import { forwardRef } from "react"
+import { forwardRef, memo } from "react"
 import { Button } from "../ui/button"
 import { ScrollArea, ScrollBar } from "../ui/scroll-area"
 
-export const DropContainer = forwardRef<
+const DropContainer = forwardRef<
   HTMLDivElement,
   ScrollAreaProps & {
     data: ColumnProps
@@ -78,3 +78,5 @@ export const DropContainer = forwardRef<
   },
 )
 DropContainer.displayName = "DropContainer"
+
+export default memo(DropContainer)

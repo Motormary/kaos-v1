@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react"
 import { Button } from "../ui/button"
+import { memo } from "react"
 
 type connectionProps = {
   connectionStatus: string
@@ -17,13 +18,13 @@ type connectionProps = {
   setOverRef: (target: null) => void
 }
 
-export default function ConnectionBar({
+const ConnectionBar = ({
   connectionStatus,
   connectOperator,
   disconnectOperator,
   users,
   setOverRef,
-}: connectionProps) {
+}: connectionProps) => {
   return (
     <div
       onPointerEnter={() => setOverRef(null)}
@@ -86,3 +87,5 @@ export default function ConnectionBar({
     </div>
   )
 }
+
+export default memo(ConnectionBar)
