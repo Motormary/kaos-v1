@@ -1,4 +1,4 @@
-# Kaos
+# Kaos pre-alpha
 A live collaboration tool where users can work together remotely.
 
 ![image](https://github.com/user-attachments/assets/f0fff940-b87a-4e05-a79c-1a2bafa1fba9)
