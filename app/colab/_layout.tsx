@@ -25,7 +25,7 @@ type props = {
 
 export default function Layout({ children }: props) {
   return (
-    <SidebarProvider className="group max-w-screen overflow-x-auto">
+    <SidebarProvider>
       <AppSidebar />
       <Inset>{children}</Inset>
     </SidebarProvider>
@@ -38,7 +38,10 @@ function Inset({ children }: props) {
   const width = open ? "calc(100% - 16rem)" : "calc(100% - 48px)"
 
   return (
-    <SidebarInset style={{ width }} className="transition-[width] ease-linear">
+    <SidebarInset
+      style={{ width }}
+      className={cn(!open && "delay-200", "transition-[width] ease-linear")}
+    >
       <header className="flex h-12 shrink-0 items-center gap-2 transition-[width] ease-linear">
         <div className="flex items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
