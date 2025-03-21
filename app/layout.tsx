@@ -36,7 +36,7 @@ export default function RootLayout({
         /> */}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-svh bg-cover bg-no-repeat antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-svh antialiased`}
       >
         <ThemeProvider
           attribute="class"
@@ -44,7 +44,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main>{children}</main>
+          {children}
           <ModeToggle />
           <BackgroundImage />
         </ThemeProvider>
