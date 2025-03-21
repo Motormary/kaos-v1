@@ -3,6 +3,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ModeToggle } from "@/components/theme-toggle-button"
 import { Metadata } from "next/types"
+import BackgroundImage from "@/components/background"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -35,7 +36,7 @@ export default function RootLayout({
         /> */}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-svh bg-[url('http://192.168.10.132:8000/assets/background.jpg')] bg-cover bg-no-repeat antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-svh bg-cover bg-no-repeat antialiased`}
       >
         <ThemeProvider
           attribute="class"
@@ -45,6 +46,7 @@ export default function RootLayout({
         >
           <main>{children}</main>
           <ModeToggle />
+          <BackgroundImage />
         </ThemeProvider>
       </body>
     </html>

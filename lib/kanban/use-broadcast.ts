@@ -276,7 +276,11 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       connectionStatus !== "connected"
     ) {
       console.info("Creating new WS connection")
-      ws = new WebSocket(`ws://192.168.10.132:8000?user=${myname}`)
+
+      ws = new WebSocket(
+        `ws://192.168.10.132:8000?user=${myname}`,
+      )
+
       // Force a rerender of users to reset the ws.onmessage
       setUsers((prev) => prev.map((user) => user))
       checkAndSetStatus()

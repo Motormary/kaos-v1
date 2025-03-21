@@ -48,7 +48,7 @@ export default tseslint.config(
       ...pluginReactHooks.configs.recommended.rules,
       // React scope no longer necessary with new JSX transform.
       "react/react-in-jsx-scope": "off",
-      "react/prop-types": "warn",
+      "react/prop-types": "off",
       "@typescript-eslint/no-unused-vars": "warn",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-require-imports": "error",

@@ -46,7 +46,7 @@ const DropContainer = forwardRef<
           <p className="text-primary mx-auto w-fit text-3xl font-bold">
             {data.id}
           </p>
-          <p className="dark:text-muted-foreground text-muted text-center text-sm">
+          <p className="text-muted-foreground text-center text-sm">
             {Intl.NumberFormat("en-US", {
               style: "currency",
               currency: "USD",

@@ -52,12 +52,12 @@ const ConnectionBar = ({
           Connect
         </Button>
       )}
-      <div className="flex justify-end gap-4">
-        <div className="flex w-fit gap-1 truncate text-white">
+      <div className="flex items-baseline justify-end gap-4">
+        <div className="text-muted-foreground flex w-fit items-center gap-1 truncate">
           <Users />
-          {users?.length ? users.length + 1 : 1}
+          <p className="text-sm">{users?.length ? users.length + 1 : 1}</p>
         </div>
-        <div className="mb-5 flex items-center gap-2 text-lg font-semibold text-white">
+        <div className="text-muted-foreground mb-5 flex items-center gap-2 font-semibold">
           {connectionStatus === "pending" ? (
             <>
               <CirclePause className={cn("size-5 fill-orange-400")} />
