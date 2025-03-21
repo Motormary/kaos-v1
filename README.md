@@ -12,6 +12,6 @@ A live collaboration tool where users can work together remotely.
 
 ## Why?
 
-Because coding is fun, and...
+Because it's a fun challenge, and...
 
 ![Ilikekanbans](https://github.com/user-attachments/assets/836b5dff-f7ab-4dfb-a902-528c24ad43b1)
