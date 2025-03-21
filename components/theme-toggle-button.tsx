@@ -29,7 +29,7 @@ export function ModeToggle() {
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild className="fixed bottom-3 left-4 z-50">
+          <TooltipTrigger asChild className="fixed right-4 bottom-3 z-50">
             <button
               onClick={() => setTheme(theme === "light" ? "dark" : "light")}
               className="bg-secondary rounded-full border p-2 hover:cursor-pointer"

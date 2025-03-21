@@ -12,21 +12,25 @@ import { memo } from "react"
 
 type connectionProps = {
   connectionStatus: string
+  users: string[]
+  colCount: number
   connectOperator: () => void
   disconnectOperator: () => void
-  users: string[]
   setOverRef: (target: null) => void
 }
 
 const ConnectionBar = ({
   connectionStatus,
+  users,
+  colCount,
   connectOperator,
   disconnectOperator,
-  users,
   setOverRef,
 }: connectionProps) => {
+  const maxWidth = colCount * 342
   return (
     <div
+      style={{ maxWidth }}
       onPointerEnter={() => setOverRef(null)}
       className="flex w-full items-baseline justify-between gap-4"
     >

@@ -14,7 +14,9 @@ import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 import { ReactNode } from "react"
 
 type props = {
@@ -23,32 +25,40 @@ type props = {
 
 export default function Layout({ children }: props) {
   return (
-    <SidebarProvider className="max-w-screen">
+    <SidebarProvider className="group max-w-screen overflow-x-auto">
       <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">
-                    Building Your Application
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
-        <div className="container overflow-x-auto group-data-[state=collapsed]:bg-red-500! lg:w-[calc(100%-255px)]">
-          {children}
-        </div>
-      </SidebarInset>
+      <Inset>{children}</Inset>
     </SidebarProvider>
+  )
+}
+
+function Inset({ children }: props) {
+  const { open } = useSidebar()
+
+  const width = open ? "calc(100% - 16rem)" : "calc(100% - 48px)"
+
+  return (
+    <SidebarInset style={{ width }} className="transition-[width] ease-linear">
+      <header className="flex h-12 shrink-0 items-center gap-2 transition-[width] ease-linear">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbLink href="#">
+                  Building Your Application
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden md:block" />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </header>
+      <div>{children}</div>
+    </SidebarInset>
   )
 }

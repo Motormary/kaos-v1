@@ -208,11 +208,13 @@ export default function KanbanBoard() {
     [broadcastNewState, cols],
   )
 
+  const colCount = cols?.length ? cols.length : 1
+
   return (
     <div
       onPointerEnter={connectOperator}
       onPointerMove={broadcastOperator}
-      className="dnd-container relative z-50 flex flex-col overflow-x-hidden overflow-y-hidden p-1"
+      className="dnd-container relative z-50 flex shrink grow-0 flex-col overflow-hidden p-1"
     >
       <ConnectionBar
         setOverRef={setOverRef}
@@ -220,6 +222,7 @@ export default function KanbanBoard() {
         connectionStatus={connectionStatus}
         disconnectOperator={disconnectOperator}
         users={users}
+        colCount={colCount}
       />
       <DndContext
         sensors={sensors}
