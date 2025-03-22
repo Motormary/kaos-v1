@@ -4,6 +4,13 @@ import { useEffect, useRef, useState } from "react"
 import { msg } from "../websocket"
 import { latency } from "./data"
 import { ColumnProps, MessageProps } from "./types"
+import {
+  startDragRemoteOperator,
+  moveRemoteOperator,
+  dragRemoteOprator,
+  cancelRemoteOperator,
+  dropRemoteOperator,
+} from "./utils"
 
 const myname = `master-${(1 + Math.random()).toFixed(3)}`
 
@@ -45,8 +52,6 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
         message: {
           type,
           currentUsers,
-          connect,
-          disconnect,
           start,
           drag,
           drop,
@@ -88,133 +93,23 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       }
 
       if (type === "move") {
-        const mouse = document?.getElementById(remoteClient)
-        const scrollYContainer = document.getElementById(
-          move?.overCol as string,
-        )
-        const scrollXContainer = document.querySelector("div.dnd-columns")
-        const viewPortEl = scrollYContainer?.children.item(1)
-
-        if (!mouse) return
-        const offsetX =
-          (x ?? 0) -
-          3.5 -
-          (viewPortEl?.scrollLeft ?? 0) -
-          (scrollXContainer?.scrollLeft ?? 0) // the 3.5px are to adjust for the svg pointer position
-        const offsetY = (y ?? 0) - 3.5 - (viewPortEl?.scrollTop ?? 0)
-        mouse.style.transition = "top 0ms linear, left 0ms linear"
-        mouse.style.left = `${offsetX}px`
-        mouse.style.top = `${offsetY}px`
+        moveRemoteOperator(remoteClient, move, x, y)
       }
 
       if (type === "start") {
-        if (isDraggingRef.current) return
-        isDraggingRef.current = true
-        console.info("start")
-        const dragEl = document.getElementById(start?.itemId as string)
-        if (!dragEl) return
-        dragEl.style.pointerEvents = "none"
-        const rect = dragEl.getBoundingClientRect()
-        const clone = dragEl.cloneNode(true) as HTMLElement
-        const dndContainer = document.querySelector("div.dnd-container")
-        dndContainer?.appendChild(clone)
-        const dndRect = dndContainer?.getBoundingClientRect()
-        const offsetX = rect.x - (dndRect?.left ?? 0)
-        const offsetY = rect.y - (dndRect?.top ?? 0)
-        clone.classList.add("ghost")
-        clone.id = `${start?.itemId}-clone`
-        clone.style.width = `${rect.width}px`
-        clone.style.height = `${rect.height}px`
-        clone.style.position = `absolute`
-        clone.style.left = `${offsetX}px`
-        clone.style.top = `${offsetY}px`
-        clone.style.zIndex = "49"
-        clone.classList.remove("backdrop-blur-md", "bg-background/40") //? Connected to line:22 @ item.tsx
-        clone.classList.add("animate-pop", "bg-background")
-        dragEl.classList.add("opacity-50")
+        startDragRemoteOperator(isDraggingRef, start)
       }
       if (type === "drag") {
         console.info("drag")
-        const cloneEl = document.getElementById(`${drag?.itemId}-clone`)
-        const dragEl = document.getElementById(drag?.itemId as string)
-        const dndContainer = document.querySelector("div.dnd-container")
-        const dndRect = dndContainer?.getBoundingClientRect()
-        const scrollXContainer = document.querySelector("div.dnd-columns")
-
-        if (!cloneEl || !dragEl) return
-        const offsetX =
-          (x ?? 0) -
-          window.scrollX -
-          (dndRect?.left ?? 0) -
-          (scrollXContainer?.scrollLeft ?? 0)
-        const offsetY = (y ?? 0) - window.scrollY - (dndRect?.top ?? 0)
-        cloneEl.style.left = `${offsetX}px`
-        cloneEl.style.top = `${offsetY}px`
+        dragRemoteOprator(drag, x, y)
       }
       if (type === "cancel") {
         console.info("cancel")
-        const dragEl = document.getElementById(cancel?.itemId as string)
-        const cloneEl = document.getElementById(`${cancel?.itemId}-clone`)
-        const dndContainer = document.querySelector("div.dnd-container")
-        const dndRect = dndContainer?.getBoundingClientRect()
-        if (!dragEl || !cloneEl) return
-        if (cloneEl) {
-          const dragRect = dragEl.getBoundingClientRect()
-          cloneEl.style.transition = "top 200ms ease, left 200ms ease"
-          cloneEl.style.left = `${dragRect.left - (dndRect?.left ?? 0)}px`
-          cloneEl.style.top = `${dragRect.top - (dndRect?.top ?? 0)}px`
-
-          /**
-           *? Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
-           */
-          setTimeout(() => {
-            cloneEl.remove()
-            dragEl?.classList.remove("opacity-50")
-            dragEl.style.pointerEvents = "auto"
-
-            isDraggingRef.current = false
-          }, 200)
-        }
+        cancelRemoteOperator(cancel, isDraggingRef)
       }
       if (type === "drop") {
         console.info("drop")
-        const dragEl = document.getElementById(drop?.itemId as string)
-        const cloneEl = document.getElementById(`${drop?.itemId}-clone`)
-        const dndContainer = document.querySelector("div.dnd-container")
-        const dndRect = dndContainer?.getBoundingClientRect()
-        if (!dragEl) {
-          console.error(
-            "Error in (cancel): Missing params => dragEl:",
-            drag?.itemId,
-          )
-          return
-        }
-        setCols(drop?.newState as ColumnProps[])
-        /**
-         *? Makes sure column state can rerender
-         */
-        setTimeout(() => {
-          if (cloneEl) {
-            const newEl = document.getElementById(drop?.itemId as string)
-            const containerEL = document.getElementById(drop?.overCol as string)
-            if (!newEl || !containerEL) return
-            const newRect = newEl.getBoundingClientRect()
-            cloneEl.style.transition = "top 200ms ease, left 200ms ease"
-            cloneEl.style.left = `${newRect.left - (dndRect?.left ?? 0)}px`
-            cloneEl.style.top = `${newRect.top - (dndRect?.top ?? 0)}px`
-
-            /**
-             *? Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
-             */
-            setTimeout(() => {
-              cloneEl.remove()
-              dragEl?.classList.remove("opacity-50")
-              dragEl.style.pointerEvents = "auto"
-
-              isDraggingRef.current = false
-            }, 200)
-          }
-        }, 10 + latency)
+        dropRemoteOperator(drop, setCols, isDraggingRef)
         // deployAgent()
       }
     }
@@ -277,9 +172,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     ) {
       console.info("Creating new WS connection")
 
-      ws = new WebSocket(
-        `ws://192.168.10.132:8000?user=${myname}`,
-      )
+      ws = new WebSocket(`ws://192.168.10.132:8000?user=${myname}`)
 
       // Force a rerender of users to reset the ws.onmessage
       setUsers((prev) => prev.map((user) => user))
