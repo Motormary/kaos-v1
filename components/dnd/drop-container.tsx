@@ -57,7 +57,7 @@ const DropContainer = forwardRef<
           id={data.id}
           ref={ref}
           {...props}
-          className="h-[85svh] px-0.5"
+          className="h-[76svh] px-0.5"
         >
           <ul
             draggable={false}

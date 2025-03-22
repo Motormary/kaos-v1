@@ -37,6 +37,7 @@ todo: refactor/clean up broadcast hook
 // !bug: disable item for remote users when item is dragging
 !bug: make empty bottom of source-column droppable
 !bug: cloneEl needs an unique id. Atm no more than 1 remote user can display clone
+!bug: too many recursions when trying to reconnect (checkAndSetStatus)
  */
 
 export default function KanbanBoard() {

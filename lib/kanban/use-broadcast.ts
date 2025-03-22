@@ -19,6 +19,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   const mainRef = useRef<HTMLElement | null>(null)
   const scrollRef = useRef<HTMLElement | null>(null)
   const isDraggingRef = useRef<true | false>(false)
+  const attempt = useRef<number>(0)
 
   useEffect(() => {
     mainRef.current = document.querySelector("main")
@@ -224,21 +225,22 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     return () => {}
   }, [users, setCols])
 
-  let attempt = 0
   // Will check connection status after a second pause
   function reCheckStatus() {
-    if (attempt >= 10) {
+    console.log("rechecking")
+    if (attempt.current >= 10) {
       checkAndSetStatus()
-      attempt = 0
+      attempt.current = 0
       return
     }
     setTimeout(() => {
       checkAndSetStatus()
-      attempt++
+      attempt.current += 1
     }, 1000)
   }
 
   function checkAndSetStatus() {
+    console.log("checkAndSet")
     if (ws === null) return
     switch (ws.readyState) {
       case 0:
@@ -250,7 +252,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       case 1:
         if (connectionStatus !== "connected") {
           setConnectionStatus("connected")
-          attempt = 0
+          attempt.current = 0
         }
         break
       case 2:
@@ -262,7 +264,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       default:
         if (connectionStatus !== "disconnected") {
           setConnectionStatus("disconnected")
-          attempt = 0
+          attempt.current = 0
         }
         break
     }
@@ -277,14 +279,13 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     ) {
       console.info("Creating new WS connection")
 
-      ws = new WebSocket(
-        `ws://192.168.10.132:8000?user=${myname}`,
-      )
+      ws = new WebSocket(`ws://192.168.10.132:8000?user=${myname}`)
 
       // Force a rerender of users to reset the ws.onmessage
       setUsers((prev) => prev.map((user) => user))
-      checkAndSetStatus()
     }
+    checkAndSetStatus()
+
     setTimeout(() => {
       msg({
         type: "connect",
@@ -393,7 +394,6 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
 
   const startBroadcast = throttle(
     (event: DragStartEvent) => {
-      checkAndSetStatus()
       msg({
         type: "start",
         overCol: event.active.data.current?.col,
