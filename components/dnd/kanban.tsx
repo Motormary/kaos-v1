@@ -25,24 +25,30 @@ import DropContainer from "./drop-container"
 import Item from "./item"
 import SortableItem from "./sortable-item"
 /* 
-?: If you're experience performance issues in dev mode; try turning off ReactStrictMode.
 todo: barrel imports
-todo: Reduce rerendering (memo, callbacks?)
+// todo: Reduce rerendering (memo, callbacks?)
 todo: Add/remove function for columns/items
-todo: use refs for state
-todo: handle auto-connect better
-todo: refactor/clean up broadcast hook
+todo: add throttle... again (Get around the compiler .current @ render)
+// todo: use refs for state
+// todo: handle auto-connect better
+// todo: refactor/clean up broadcast hook
 // !bug: fix restrict to window issue, item cannot be sorted to the bottom easily
 // !bug: if remote user has a larger screen the current user can drag out of bounds and get draggable clone stuck 
 // !bug: disable item for remote users when item is dragging
-!bug: make empty bottom of source-column droppable
-!bug: cloneEl needs an unique id. Atm no more than 1 remote user can display clone
+// !bug: make empty bottom of source-column droppable
+// !bug: cloneEl needs an unique id. Atm no more than 1 remote user can display clone
+!bug: If user1 updates cols while user2 dragged over a new column > user2 cannot update state (fix: setcols on hover new col)
+!bug: Make disconnect state permanent
  */
 
 export default function KanbanBoard() {
   const [cols, setCols] = useState<ColumnProps[]>(initialColumns)
   const [activeItem, setActiveItem] = useState<ItemProps | null>(null)
   const [source, setSource] = useState<string | null>(null)
+  const handleSetCols = useCallback(
+    (state: ColumnProps[]) => setCols(state),
+    [],
+  )
   const {
     users,
     broadcastDrag,
@@ -55,7 +61,7 @@ export default function KanbanBoard() {
     disconnectOperator,
     setOverRef,
     broadcastNewState,
-  } = useBroadCast(setCols)
+  } = useBroadCast(handleSetCols)
 
   const handleDragOver = useCallback(
     (
@@ -212,7 +218,7 @@ export default function KanbanBoard() {
 
   return (
     <div
-      onPointerEnter={connectOperator}
+      // onPointerEnter={connectOperator}
       onPointerMove={broadcastOperator}
       className="dnd-container relative z-50 flex shrink grow-0 flex-col overflow-hidden p-1"
     >

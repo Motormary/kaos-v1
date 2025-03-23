@@ -1,7 +1,5 @@
 import { arrayMove } from "@dnd-kit/sortable"
 import { ColumnProps, ItemProps, MessageProps } from "./types"
-import { MutableRefObject, RefObject } from "react"
-import { latency } from "./data"
 
 export function addToCol(
   col: ColumnProps,
@@ -77,11 +75,8 @@ export function moveRemoteOperator(
 }
 
 export function startDragRemoteOperator(
-  isDraggingRef: MutableRefObject<boolean>,
   start: MessageProps["message"]["start"],
 ) {
-  if (isDraggingRef.current) return
-  isDraggingRef.current = true
   console.info("start")
   const dragEl = document.getElementById(start?.itemId as string)
   if (!dragEl) return
@@ -106,7 +101,7 @@ export function startDragRemoteOperator(
   dragEl.classList.add("opacity-50")
 }
 
-export function dragRemoteOprator(
+export function dragRemoteOperator(
   drag: MessageProps["message"]["drag"],
   x: number | undefined,
   y: number | undefined,
@@ -130,7 +125,6 @@ export function dragRemoteOprator(
 
 export function cancelRemoteOperator(
   cancel: MessageProps["message"]["cancel"],
-  isDraggingRef: MutableRefObject<boolean>,
 ) {
   const dragEl = document.getElementById(cancel?.itemId as string)
   const cloneEl = document.getElementById(`${cancel?.itemId}-clone`)
@@ -146,20 +140,16 @@ export function cancelRemoteOperator(
     /**
      *? Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
      */
-    setTimeout(() => {
       cloneEl.remove()
       dragEl?.classList.remove("opacity-50")
       dragEl.style.pointerEvents = "auto"
 
-      isDraggingRef.current = false
-    }, 200)
   }
 }
 
 export function dropRemoteOperator(
   drop: MessageProps["message"]["drop"],
   setCols: (state: ColumnProps[]) => void,
-  isDraggingRef: MutableRefObject<boolean>,
 ) {
   const dragEl = document.getElementById(drop?.itemId as string)
   const cloneEl = document.getElementById(`${drop?.itemId}-clone`)
@@ -173,26 +163,26 @@ export function dropRemoteOperator(
   /**
    *? Makes sure column state can rerender
    */
-  setTimeout(() => {
-    if (cloneEl) {
-      const newEl = document.getElementById(drop?.itemId as string)
-      const containerEL = document.getElementById(drop?.overCol as string)
-      if (!newEl || !containerEL) return
-      const newRect = newEl.getBoundingClientRect()
-      cloneEl.style.transition = "top 200ms ease, left 200ms ease"
-      cloneEl.style.left = `${newRect.left - (dndRect?.left ?? 0)}px`
-      cloneEl.style.top = `${newRect.top - (dndRect?.top ?? 0)}px`
 
-      /**
-       *? Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
-       */
-      setTimeout(() => {
-        cloneEl.remove()
-        dragEl?.classList.remove("opacity-50")
-        dragEl.style.pointerEvents = "auto"
-
-        isDraggingRef.current = false
-      }, 200)
-    }
-  }, 10 + latency)
+    setTimeout(() => {
+      if (cloneEl) {
+        const newEl = document.getElementById(drop?.itemId as string)
+        const containerEL = document.getElementById(drop?.overCol as string)
+        if (!newEl || !containerEL) return
+        const newRect = newEl.getBoundingClientRect()
+        cloneEl.style.transition = "top 200ms ease, left 200ms ease"
+        cloneEl.style.left = `${newRect.left - (dndRect?.left ?? 0)}px`
+        cloneEl.style.top = `${newRect.top - (dndRect?.top ?? 0)}px`
+        
+        /**
+         *? Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
+         */
+        setTimeout(() => {
+          cloneEl.remove()
+          dragEl?.classList.remove("opacity-50")
+          dragEl.style.pointerEvents = "auto"
+          
+        }, 200)
+      }
+    }, 10)
 }
