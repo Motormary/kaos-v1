@@ -9,12 +9,15 @@ import {
   moveRemoteOperator,
   startDragRemoteOperator,
 } from "./utils"
+import { useSidebar } from "@/components/ui/sidebar"
 
 const myname = `master-${(1 + Math.random()).toFixed(3)}`
 const socket = new WebSocket(`ws://192.168.10.132:8000?user=${myname}`)
 
 export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   const ws = useRef<WebSocket | null>(socket)
+  const { open } = useSidebar()
+  const sidebarOffsetX = open ? 0 : 208
   const isBroadcasting = useRef<boolean>(false)
   const [users, setUsers] = useState<string[]>([])
   const [connectionStatus, setConnectionStatus] = useState<
@@ -85,9 +88,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     ) {
       console.info("Creating new WS connection")
 
-      ws.current = new WebSocket(
-        `ws://192.168.10.132:8000?user=${myname}`,
-      )
+      ws.current = new WebSocket(`ws://192.168.10.132:8000?user=${myname}`)
       isBroadcasting.current = true
 
       // Force a rerender of users to reset the ws.onmessage
@@ -143,24 +144,28 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       const containerEl = document.getElementById(scrollRef.current?.id ?? "")
       const scrollXContainer = document.querySelector("div.dnd-columns")
       const viewPortEl = containerEl?.children.item(1)
+      
+      const offsetX =
+        (event.active.rect.current.translated?.left ?? 0) +
+        (viewPortEl?.scrollLeft ?? 0) +
+        (scrollXContainer?.scrollLeft ?? 0) +
+        window.scrollX + sidebarOffsetX
+      const offsetY =
+        (event.active.rect.current.translated?.top ?? 0) +
+        (viewPortEl?.scrollTop ?? 0) +
+        window.scrollY
+
       msg({
         type: "drag",
         drag: {
           itemId: event?.active?.id as string,
           overCol: scrollRef.current?.id ?? "",
         },
-        x:
-          (event.active.rect.current.translated?.left ?? 0) +
-          (viewPortEl?.scrollLeft ?? 0) +
-          (scrollXContainer?.scrollLeft ?? 0) +
-          window.scrollX,
-        y:
-          (event.active.rect.current.translated?.top ?? 0) +
-          (viewPortEl?.scrollTop ?? 0) +
-          window.scrollY,
+        x: offsetX,
+        y: offsetY,
       })
     },
-    [msg],
+    [msg, sidebarOffsetX],
   )
 
   const cancelDragBroadcast = useCallback(
@@ -277,7 +282,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       }
       if (type === "drag") {
         console.info("drag")
-        dragRemoteOperator(drag, x, y)
+        dragRemoteOperator(drag, x, y, sidebarOffsetX)
       }
       if (type === "cancel") {
         console.info("cancel")
@@ -295,7 +300,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     checkAndSetStatus()
 
     return () => {}
-  }, [users, setCols, checkAndSetStatus, ws])
+  }, [users, setCols, checkAndSetStatus, ws, sidebarOffsetX])
 
   return {
     users, // users in group

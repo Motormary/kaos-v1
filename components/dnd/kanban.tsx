@@ -39,6 +39,7 @@ todo: add throttle... again (Get around the compiler .current @ render)
 // !bug: cloneEl needs an unique id. Atm no more than 1 remote user can display clone
 !bug: If user1 updates cols while user2 dragged over a new column > user2 cannot update state (fix: setcols on hover new col)
 !bug: Make disconnect state permanent
+// !bug: Compensate offsetX depending on sidebar state
  */
 
 export default function KanbanBoard() {
@@ -49,6 +50,7 @@ export default function KanbanBoard() {
     (state: ColumnProps[]) => setCols(state),
     [],
   )
+  const colCount = cols?.length ? cols.length : 1
   const {
     users,
     broadcastDrag,
@@ -99,11 +101,14 @@ export default function KanbanBoard() {
     [activeItem, cols, setOverRef],
   )
 
-  function handleDragStart(event: DragStartEvent) {
-    startBroadcast(event) // Will connect user to websocket on dragStart (dev purposes)
-    setSource(event.active.data?.current?.col) // Source of initiated drag event
-    setActiveItem(event.active.data.current as ItemProps) // Currently dragged item
-  }
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      startBroadcast(event) // Will connect user to websocket on dragStart (dev purposes)
+      setSource(event.active.data?.current?.col) // Source of initiated drag event
+      setActiveItem(event.active.data.current as ItemProps) // Currently dragged item
+    },
+    [startBroadcast],
+  )
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -213,8 +218,6 @@ export default function KanbanBoard() {
     },
     [broadcastNewState, cols],
   )
-
-  const colCount = cols?.length ? cols.length : 1
 
   return (
     <div

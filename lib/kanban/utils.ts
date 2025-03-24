@@ -105,6 +105,7 @@ export function dragRemoteOperator(
   drag: MessageProps["message"]["drag"],
   x: number | undefined,
   y: number | undefined,
+  sidebarOffset: number
 ) {
   const cloneEl = document.getElementById(`${drag?.itemId}-clone`)
   const dragEl = document.getElementById(drag?.itemId as string)
@@ -117,7 +118,7 @@ export function dragRemoteOperator(
     (x ?? 0) -
     window.scrollX -
     (dndRect?.left ?? 0) -
-    (scrollXContainer?.scrollLeft ?? 0)
+    (scrollXContainer?.scrollLeft ?? 0) - sidebarOffset
   const offsetY = (y ?? 0) - window.scrollY - (dndRect?.top ?? 0)
   cloneEl.style.left = `${offsetX}px`
   cloneEl.style.top = `${offsetY}px`
