@@ -14,7 +14,6 @@ export default function BackgroundImage() {
           objectFit: "cover",
           objectPosition: "center",
         }}
-        priority
       />
     </div>
   )
