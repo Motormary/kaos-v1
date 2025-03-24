@@ -38,7 +38,7 @@ todo: add throttle... again (Get around the compiler .current @ render)
 // !bug: make empty bottom of source-column droppable
 // !bug: cloneEl needs an unique id. Atm no more than 1 remote user can display clone
 !bug: If user1 updates cols while user2 dragged over a new column > user2 cannot update state (fix: setcols on hover new col)
-!bug: Make disconnect state permanent
+// !bug: Make disconnect state permanent
 // !bug: Compensate offsetX depending on sidebar state
  */
 

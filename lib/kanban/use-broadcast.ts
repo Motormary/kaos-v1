@@ -24,6 +24,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
     "pending" | "connected" | "closing" | "disconnected"
   >("disconnected")
   const scrollRef = useRef<HTMLElement | null>(null)
+  const manualDisconnect = useRef<boolean>(false)
 
   const reportError = throttle(
     () => console.warn("Message not sent, not connected to websocket."),
@@ -80,6 +81,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   }, [connectionStatus, ws])
 
   const connectOperator = useCallback(() => {
+    manualDisconnect.current = false
     // Check for connection
     if (
       connectionStatus !== "pending" &&
@@ -107,6 +109,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
 
   const disconnectOperator = useCallback(() => {
     if (ws.current === null) return
+    manualDisconnect.current = true
     // Backend will tell all the connected clients to remove current user from their workspace.
     ws.current.close()
     setUsers([])
@@ -116,7 +119,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
 
   const broadcastOperator = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (!isBroadcasting.current) {
+      if (!isBroadcasting.current && !manualDisconnect.current) {
         connectOperator()
       }
       const containerEl = document.getElementById(scrollRef.current?.id ?? "")
