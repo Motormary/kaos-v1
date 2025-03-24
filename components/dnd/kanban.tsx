@@ -7,6 +7,7 @@ import { addToCol, removeFromCol, reorderItems } from "@/lib/kanban/utils"
 import {
   defaultDropAnimationSideEffects,
   DndContext,
+  DragCancelEvent,
   DragEndEvent,
   DragOverEvent,
   DragOverlay,
@@ -219,9 +220,13 @@ export default function KanbanBoard() {
     [broadcastNewState, cols],
   )
 
+  const handleCancel = useCallback(
+    (e: DragCancelEvent) => endDragBroadcast(e, cols),
+    [cols, endDragBroadcast],
+  )
+
   return (
     <div
-      // onPointerEnter={connectOperator}
       onPointerMove={broadcastOperator}
       className="dnd-container relative z-50 flex shrink grow-0 flex-col overflow-hidden p-1"
     >
@@ -239,7 +244,7 @@ export default function KanbanBoard() {
         onDragEnd={handleDragEnd}
         onDragOver={handleDragOver}
         onDragMove={broadcastDrag}
-        onDragCancel={(e) => endDragBroadcast(e, cols)}
+        onDragCancel={handleCancel}
       >
         <div className="dnd-columns flex overflow-x-auto">
           {cols.map((col, colIndex) => {
