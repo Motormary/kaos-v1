@@ -66,7 +66,7 @@ const DropContainer = forwardRef<
             className={cn(
               // active?.data.current?.col === data.id &&
               //   "bg-muted/10 dark:bg-muted/20",
-              "grid min-h-[85svh] min-w-[336px] content-start gap-2 p-2 transition-colors",
+              "grid min-h-[76svh] min-w-[336px] content-start gap-2 p-2 transition-colors",
             )}
           >
             {children}

@@ -150,25 +150,25 @@ export function cancelRemoteOperator(
 
 export function dropRemoteOperator(
   drop: MessageProps["message"]["drop"],
-  setCols: (active: ItemProps, source: string, sourceItem: ItemProps, overIndex: number) => void,
+  setCols: (data: MessageProps["message"]["drop"]) => void,
 ) {
-  const dragEl = document.getElementById(drop?.activeItem.id as string)
-  const cloneEl = document.getElementById(`${drop?.activeItem.id}-clone`)
+  const dragEl = document.getElementById(drop?.itemId as string)
+  const cloneEl = document.getElementById(`${drop?.itemId}-clone`)
   const dndContainer = document.querySelector("div.dnd-container")
   const dndRect = dndContainer?.getBoundingClientRect()
   if (!dragEl) {
-    console.error("Error in (cancel): Missing params => dragEl:", drop?.activeItem.id)
+    console.error("Error in (cancel): Missing params => dragEl:", drop?.itemId)
     return
   }
-  setCols(drop?.activeItem as ItemProps, drop?.sourceCol as string, drop?.sourceItem as ItemProps, drop?.overIndex as number)
+  setCols({...drop} as MessageProps["message"]["drop"])
   /**
    *? Makes sure column state can rerender
    */
 
     setTimeout(() => {
       if (cloneEl) {
-        const newEl = document.getElementById(drop?.activeItem.id as string)
-        const containerEL = document.getElementById(drop?.activeItem.col as string)
+        const newEl = document.getElementById(drop?.itemId as string)
+        const containerEL = document.getElementById(drop?.newCol as string)
         if (!newEl || !containerEL) return
         const newRect = newEl.getBoundingClientRect()
         cloneEl.style.transition = "top 200ms ease, left 200ms ease"

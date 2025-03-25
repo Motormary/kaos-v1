@@ -56,10 +56,9 @@ export type MessageProps = {
       itemId: string
     }
     drop?: {
-      activeItem: ItemProps,
-      sourceCol: string,
-      sourceItem: ItemProps,
-      overIndex?: number
+      itemId: string,
+      newCol: string,
+      newIndex?: number,
     }
     cancel?: {
       itemId: string

@@ -1,7 +1,7 @@
 "use client"
 
 import { initialColumns } from "@/lib/kanban/data"
-import { ColumnProps, ItemProps } from "@/lib/kanban/types"
+import { ColumnProps, ItemProps, MessageProps } from "@/lib/kanban/types"
 import useBroadCast from "@/lib/kanban/use-broadcast"
 import { addToCol, removeFromCol, reorderItems } from "@/lib/kanban/utils"
 import {
@@ -27,20 +27,10 @@ import Item from "./item"
 import SortableItem from "./sortable-item"
 /* 
 todo: barrel imports
-// todo: Reduce rerendering (memo, callbacks?)
+todo: offline storage for owner
 todo: Add/remove function for columns/items
 todo: add throttle... again (Get around the compiler .current @ render)
-// todo: use refs for state
-// todo: handle auto-connect better
-// todo: refactor/clean up broadcast hook
-// !bug: fix restrict to window issue, item cannot be sorted to the bottom easily
-// !bug: if remote user has a larger screen the current user can drag out of bounds and get draggable clone stuck 
-// !bug: disable item for remote users when item is dragging
-// !bug: make empty bottom of source-column droppable
-// !bug: cloneEl needs an unique id. Atm no more than 1 remote user can display clone
-!bug: If user1 updates cols while user2 dragged over a new column > user2 cannot update state (fix: setcols on hover new col)
-// !bug: Make disconnect state permanent
-// !bug: Compensate offsetX depending on sidebar state
+todo: fix/bundle types/params for functions
 !bug: fix mobile drag offset
  */
 
@@ -49,53 +39,84 @@ export default function KanbanBoard() {
   const [activeItem, setActiveItem] = useState<ItemProps | null>(null)
   const sourceCol = useRef<string | null>(null)
   const sourceItem = useRef<ItemProps | null>(null)
+
+  /* const handleAddItem = useCallback((data: MessageProps['message']['drop']) => {
+    setCols(prev => prev.map(col => {
+      if (col.id === data?.newCol) {
+        return {...col, items: }
+      } else return col
+      
+    }))
+  }, []) */
+
   const handleSetCols = useCallback(
-    (
-      active: ItemProps,
-      source: string,
-      sourceItem: ItemProps,
-      overIndex: number,
-    ) => {
-      console.log("activecol:", active.col, "sourceCol:", source)
-      //! HANDLE SAME COLUMN!!
-      if (active.col === source) {
-        setCols((prev) =>
-          prev.map((col) => {
-            if (col.id === active.col) {
-              return {
-                ...col,
-                items:
-                  typeof overIndex === "number"
-                    ? reorderItems(col.items, sourceItem.index, overIndex)
-                    : col.items,
+    (data: MessageProps["message"]["drop"]) => {
+      const localItem: ItemProps = cols.reduce((acc, col) => {
+        const isItem = col.items.find((item) => item.id === data?.itemId)
+        if (isItem) acc = isItem
+        return acc
+      }, {} as ItemProps)
+
+      if (data?.newCol === localItem.col) {
+        if (data.newIndex) {
+          setCols((prev) =>
+            prev.map((col) => {
+              if (col.id === localItem.col) {
+                return {
+                  ...col,
+                  items: reorderItems(
+                    col.items,
+                    localItem.index,
+                    data.newIndex as number,
+                  ),
+                }
               }
-            }
-            return col
-          }),
-        )
+              return col
+            }),
+          )
+        } else {
+          setCols((prev) =>
+            prev.map((col) => {
+              if (col.id === data.newCol) {
+                const newItems = [
+                  ...col.items.filter((item) => item.id !== data.itemId),
+                  localItem,
+                ]
+                return {
+                  ...col,
+                  items: newItems,
+                }
+              } else return col
+            }),
+          )
+        }
       }
 
-      if (active.col !== source) {
+      if (data?.newCol !== localItem.col) {
         setCols((prev) =>
           prev.map((col) => {
-            if (col.id === active.col) {
-              const newCol = addToCol(col, active)
-
+            if (col.id === data?.newCol) {
+              const newCol = addToCol(col, localItem)
               return {
                 ...newCol,
                 items:
-                  typeof overIndex === "number"
-                    ? reorderItems(newCol.items, col.items.length, overIndex)
+                  typeof data.newIndex === "number"
+                    ? reorderItems(
+                        newCol.items,
+                        col.items.length,
+                        data.newIndex,
+                      )
                     : newCol.items,
               }
             }
-            return removeFromCol(col, active.id)
+            return removeFromCol(col, data?.itemId as string)
           }),
         )
       }
     },
-    [],
+    [cols],
   )
+
   const colCount = cols?.length ? cols.length : 1
   const {
     users,
@@ -108,7 +129,7 @@ export default function KanbanBoard() {
     startBroadcast,
     disconnectOperator,
     setOverRef,
-    broadcastNewState,
+    //broadcastNewState,
   } = useBroadCast(handleSetCols)
 
   const handleDragOver = useCallback(
@@ -117,6 +138,7 @@ export default function KanbanBoard() {
       const sourceColId = activeItem.col
       const targetColId = e.over.data.current.col
       const over = e.over.data.current as ItemProps & { type: "item" | "drop" }
+      console.log("🚀 ~ KanbanBoard ~ over:", over)
 
       /**
        * If hovered column is not the source-column, add the dragged item to hovered column and remove it from previous
@@ -128,12 +150,29 @@ export default function KanbanBoard() {
             newItem.index = col.items.length
             newItem.col = col.id
             setActiveItem(newItem)
+            //todo: add item to remote clients
             return addToCol(col, activeItem)
           } else {
             return removeFromCol(col, activeItem.id)
           }
         })
         setCols(newCols)
+      } else if (targetColId === sourceColId && over.type === "drop") {
+        // this simply makes it possible to drag and drop at the bottom of the container
+        setCols((prev) =>
+          prev.map((col) => {
+            if (col.id === activeItem.col) {
+              const newItems = [
+                ...col.items.filter((item) => item.id !== activeItem.id),
+                activeItem,
+              ]
+              return {
+                ...col,
+                items: newItems,
+              }
+            } else return col
+          }),
+        )
       }
       if (over) setOverRef(document.getElementById(over?.col) ?? null) // dependency of remote animation @ useBroadcast.ts
     },
@@ -187,13 +226,11 @@ export default function KanbanBoard() {
           return col
         })
 
-        endDragBroadcast(
-          event,
-          activeItem as ItemProps,
-          sourceCol.current as string,
-          sourceItem.current as ItemProps,
-          over.index as number,
-        )
+        endDragBroadcast(event, {
+          itemId: activeItem?.id as string,
+          newCol: activeItem?.col as string,
+          newIndex: over.index as number,
+        })
         setCols(newCols)
         setActiveItem(null)
         sourceCol.current = null
@@ -205,25 +242,16 @@ export default function KanbanBoard() {
       /**
        * Item has been added to end of new column (locally with handleDragOver), update remote clients.
        */
-      endDragBroadcast(
-        event,
-        activeItem as ItemProps,
-        sourceCol.current as string,
-        sourceItem.current as ItemProps,
-        over.index,
-      )
+      endDragBroadcast(event, {
+        itemId: activeItem?.id as string,
+        newCol: activeItem?.col as string,
+        newIndex: over.index as number,
+      })
       setActiveItem(null)
       sourceCol.current = null
       sourceItem.current = null
     },
-    [
-      activeItem?.id,
-      activeItem?.index,
-      cancelDragBroadcast,
-      cols,
-      endDragBroadcast,
-      sourceCol,
-    ],
+    [cancelDragBroadcast, cols, endDragBroadcast, sourceCol, activeItem],
   )
 
   const keyboardSensor = useSensor(KeyboardSensor, {
@@ -249,36 +277,43 @@ export default function KanbanBoard() {
     (columnId: string) => {
       const newCols = cols.map((col) => {
         if (col.id === columnId) {
+          const newItem = {
+            id: Math.random().toString(),
+            index: col.items.length,
+            col: columnId,
+            title: "New item!",
+            body: "Successfully added new item.",
+            prio: 2,
+            icon: "Trophy",
+            value: 100000,
+          }
           return {
             ...col,
-            items: [
-              ...col.items,
-              {
-                id: Math.random().toString(),
-                index: col.items.length,
-                col: columnId,
-                title: "New item!",
-                body: "Successfully added new item.",
-                prio: 2,
-                icon: "Trophy",
-                value: 100000,
-              },
-            ],
+            items: [...col.items, newItem],
           }
         }
         return col
       })
-
+      //! NEW FUNCTION NEEDED
+      /*       broadcastNewState({
+        itemId: newItem.id,
+        newCol: col.id,
+        newIndex: col.items.length,
+      }) */
       setCols(newCols)
-      broadcastNewState(newCols)
     },
-    [broadcastNewState, cols],
+    [cols],
   )
 
-  /*  const handleCancel = useCallback(
-    (e: DragCancelEvent) => endDragBroadcast(e, cols),
-    [cols, endDragBroadcast],
-  ) */
+  const handleCancel = useCallback(
+    (e: DragCancelEvent) =>
+      endDragBroadcast(e, {
+        itemId: activeItem?.id as string,
+        newCol: activeItem?.col as string,
+        newIndex: activeItem?.index,
+      }),
+    [endDragBroadcast, activeItem],
+  )
 
   return (
     <div
@@ -299,7 +334,7 @@ export default function KanbanBoard() {
         onDragEnd={handleDragEnd}
         onDragOver={handleDragOver}
         onDragMove={broadcastDrag}
-        // onDragCancel={handleCancel}
+        onDragCancel={handleCancel}
       >
         <div className="dnd-columns flex overflow-x-auto">
           {cols.map((col, colIndex) => {

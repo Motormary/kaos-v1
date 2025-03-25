@@ -14,7 +14,7 @@ import { useSidebar } from "@/components/ui/sidebar"
 const myname = `master-${(1 + Math.random()).toFixed(3)}`
 const socket = new WebSocket(`ws://192.168.10.132:8000?user=${myname}`)
 
-export default function useBroadCast(setCols: (active: ItemProps, source: string, sourceItem: ItemProps, overIndex: number) => void) {
+export default function useBroadCast(setCols: (data: MessageProps["message"]["drop"]) => void) {
   const ws = useRef<WebSocket | null>(socket)
   const { open } = useSidebar()
   const sidebarOffsetX = open ? 0 : 208
@@ -81,6 +81,7 @@ export default function useBroadCast(setCols: (active: ItemProps, source: string
   }, [connectionStatus, ws])
 
   const connectOperator = useCallback(() => {
+    isBroadcasting.current = true
     manualDisconnect.current = false
     // Check for connection
     if (
@@ -91,7 +92,6 @@ export default function useBroadCast(setCols: (active: ItemProps, source: string
       console.info("Creating new WS connection")
 
       ws.current = new WebSocket(`ws://192.168.10.132:8000?user=${myname}`)
-      isBroadcasting.current = true
 
       // Force a rerender of users to reset the ws.onmessage
       setUsers((prev) => prev.map((user) => user))
@@ -185,16 +185,11 @@ export default function useBroadCast(setCols: (active: ItemProps, source: string
   )
 
   const endDragBroadcast = useCallback(
-    (event: DragCancelEvent, activeItem: ItemProps, sourceCol: string, sourceItem: ItemProps, overIndex: number) => {
+    (event: DragCancelEvent, data: MessageProps["message"]["drop"]) => {
       msg({
         type: "drop",
         overCol: event.over?.data?.current?.col,
-        drop: {
-          activeItem,
-          sourceItem,
-          sourceCol,
-          overIndex
-        },
+        drop: data,
       })
     },
     [msg],
@@ -215,10 +210,10 @@ export default function useBroadCast(setCols: (active: ItemProps, source: string
   )
 
   const broadcastNewState = useCallback(
-    (cols: ColumnProps[]) => {
+    (data: MessageProps['message']['drop']) => {
       msg({
         type: "newState",
-        newState: cols,
+        drop: data
       })
     },
     [msg],
@@ -273,8 +268,9 @@ export default function useBroadCast(setCols: (active: ItemProps, source: string
         }
       }
 
-      if (type === "newState" && newState) {
-        // setCols(newState)
+      if (type === "newState") {
+        throw new Error('THIS NO LONGER WORKS, CREATE NEW FUNCTION')
+        // setCols(drop)
       }
 
       if (type === "move") {
