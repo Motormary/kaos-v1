@@ -1,7 +1,7 @@
 import { DragCancelEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core"
 import throttle from "lodash.throttle"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ColumnProps, MessageProps } from "./types"
+import { ColumnProps, ItemProps, MessageProps } from "./types"
 import {
   cancelRemoteOperator,
   dragRemoteOperator,
@@ -14,7 +14,7 @@ import { useSidebar } from "@/components/ui/sidebar"
 const myname = `master-${(1 + Math.random()).toFixed(3)}`
 const socket = new WebSocket(`ws://192.168.10.132:8000?user=${myname}`)
 
-export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
+export default function useBroadCast(setCols: (active: ItemProps, source: string, sourceItem: ItemProps, overIndex: number) => void) {
   const ws = useRef<WebSocket | null>(socket)
   const { open } = useSidebar()
   const sidebarOffsetX = open ? 0 : 208
@@ -185,14 +185,15 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
   )
 
   const endDragBroadcast = useCallback(
-    (event: DragCancelEvent, newState: ColumnProps[]) => {
+    (event: DragCancelEvent, activeItem: ItemProps, sourceCol: string, sourceItem: ItemProps, overIndex: number) => {
       msg({
         type: "drop",
         overCol: event.over?.data?.current?.col,
         drop: {
-          itemId: event.active.id as string,
-          newState: newState,
-          overCol: scrollRef.current?.id ?? "",
+          activeItem,
+          sourceItem,
+          sourceCol,
+          overIndex
         },
       })
     },
@@ -273,7 +274,7 @@ export default function useBroadCast(setCols: (val: ColumnProps[]) => void) {
       }
 
       if (type === "newState" && newState) {
-        setCols(newState)
+        // setCols(newState)
       }
 
       if (type === "move") {
