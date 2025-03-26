@@ -21,8 +21,8 @@ export default function useBroadCast(
   handleActiveRemote: (id: string, action: "add" | "remove") => void,
 ) {
   const ws = useRef<WebSocket | null>(socket)
-  const { open } = useSidebar()
-  const sidebarOffsetX = open ? 0 : 208
+  const { open, isMobile } = useSidebar()
+  const sidebarOffsetX = isMobile ? 256 : open ? 0 : 208
   const isJackedIn = useRef<boolean>(false)
   const [users, setUsers] = useState<string[]>([])
   const [connectionStatus, setConnectionStatus] = useState<
@@ -50,7 +50,7 @@ export default function useBroadCast(
           const msg = JSON.stringify(data)
           ws.current.send(msg)
         } catch (e) {
-          console.log("Websocket request failed:", e)
+          console.warn("Websocket request failed:", e)
         }
       }
     },
@@ -149,36 +149,32 @@ export default function useBroadCast(
     [msg, connectOperator],
   )
 
-  const broadcastDrag = useCallback(
-    (event: DragMoveEvent) => {
-      const containerEl = document.getElementById(scrollRef.current?.id ?? "")
-      const scrollXContainer = document.querySelector("div.dnd-columns")
-      const viewPortEl = containerEl?.children.item(1)
+  function broadcastDrag(event: DragMoveEvent) {
+    const containerEl = document.getElementById(scrollRef.current?.id ?? "")
+    const scrollXContainer = document.querySelector("div.dnd-columns")
+    const viewPortEl = containerEl?.children.item(1)
 
-      const offsetX =
-        (event.active.rect.current.translated?.left ?? 0) +
-        (viewPortEl?.scrollLeft ?? 0) +
-        (scrollXContainer?.scrollLeft ?? 0) +
-        window.scrollX +
-        sidebarOffsetX
-      const offsetY =
-        (event.active.rect.current.translated?.top ?? 0) +
-        (viewPortEl?.scrollTop ?? 0) +
-        window.scrollY
+    const offsetX =
+      (event.active.rect.current.translated?.left ?? 0) +
+      (viewPortEl?.scrollLeft ?? 0) +
+      (scrollXContainer?.scrollLeft ?? 0) +
+      window.scrollX +
+      sidebarOffsetX
+    const offsetY =
+      (event.active.rect.current.translated?.top ?? 0) +
+      (viewPortEl?.scrollTop ?? 0) +
+      window.scrollY
 
-      msg({
-        type: "drag",
-        drag: {
-          itemId: event?.active?.id as string,
-          overCol: scrollRef.current?.id ?? "",
-        },
-        x: offsetX,
-        y: offsetY,
-      })
-    },
-    [msg, sidebarOffsetX],
-  )
-
+    msg({
+      type: "drag",
+      drag: {
+        itemId: event?.active?.id as string,
+        overCol: scrollRef.current?.id ?? "",
+      },
+      x: offsetX,
+      y: offsetY,
+    })
+  }
   const cancelDragBroadcast = useCallback(
     (event: DragCancelEvent) => {
       msg({
@@ -310,7 +306,7 @@ export default function useBroadCast(
     checkAndSetStatus()
 
     return () => {}
-  }, [users, setCols, checkAndSetStatus, ws, sidebarOffsetX])
+  }, [users, setCols, checkAndSetStatus, ws, sidebarOffsetX, handleActiveRemote])
 
   return {
     users, // users in group

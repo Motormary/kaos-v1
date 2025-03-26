@@ -32,8 +32,7 @@ todo: offline storage for owner
 todo: Add/remove function for columns/items
 todo: add throttle... again (Get around the compiler .current @ render)
 todo: fix/bundle types/params for functions
-todo: broadcast state on dragOver to avoid index collisions
-!bug: fix mobile drag offset
+todo: remove opacity / pointer-events from create clone function
  */
 
 export default function KanbanBoard() {
