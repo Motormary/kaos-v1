@@ -32,7 +32,6 @@ todo: offline storage for owner
 todo: Add/remove function for columns/items
 todo: add throttle... again (Get around the compiler .current @ render)
 todo: fix/bundle types/params for functions
-todo: remove opacity / pointer-events from create clone function
  */
 
 export default function KanbanBoard() {
@@ -177,22 +176,30 @@ export default function KanbanBoard() {
         }
       })
       setCols(newCols)
-    } else if (targetColId === sourceColId && over.type === "drop") {
-      // this simply makes it possible to drag and drop at the bottom of the container
-      setCols((prev) =>
-        prev.map((col) => {
-          if (col.id === activeItem.col) {
-            const newItems = [
-              ...col.items.filter((item) => item.id !== activeItem.id),
-              activeItem,
-            ]
-            return {
-              ...col,
-              items: newItems,
-            }
-          } else return col
-        }),
-      )
+    } else if (targetColId === sourceColId) {
+      if (over.type === "drop") {
+        // this simply makes it possible to drag and drop at the bottom of the container
+        setCols((prev) =>
+          prev.map((col) => {
+            if (col.id === activeItem.col) {
+              const newItems = [
+                ...col.items.filter((item) => item.id !== activeItem.id),
+                activeItem,
+              ]
+              return {
+                ...col,
+                items: newItems,
+              }
+            } else return col
+          }),
+        )
+      } else if (over.type === "item" && over.id !== activeItem.id) {
+        broadcastSort({
+          itemId: activeItem.id,
+          newCol: over.col,
+          newIndex: over.index,
+        })
+      }
     }
     if (over) setOverRef(document.getElementById(over?.col) ?? null) // dependency of remote animation @ useBroadcast.ts
   }

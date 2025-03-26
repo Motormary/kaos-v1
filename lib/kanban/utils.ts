@@ -81,7 +81,6 @@ export function startDragRemoteOperator(
   console.info("start")
   const dragEl = document.getElementById(start?.itemId as string)
   if (!dragEl) return
-  dragEl.style.pointerEvents = "none"
   const rect = dragEl.getBoundingClientRect()
   const clone = dragEl.cloneNode(true) as HTMLElement
   const dndContainer = document.querySelector("div.dnd-container")
@@ -99,7 +98,6 @@ export function startDragRemoteOperator(
   clone.style.zIndex = "49"
   clone.classList.remove("backdrop-blur-md", "bg-background/40") //? Connected to line:22 @ item.tsx
   clone.classList.add("animate-pop", "bg-background")
-  dragEl.classList.add("opacity-50")
 }
 
 export function dragRemoteOperator(
@@ -145,7 +143,6 @@ export function cancelRemoteOperator(
      */
     cloneEl.remove()
     dragEl?.classList.remove("opacity-50")
-    dragEl.style.pointerEvents = "auto"
   }
 }
 
@@ -182,7 +179,6 @@ export function dropRemoteOperator(
       setTimeout(() => {
         cloneEl.remove()
         dragEl?.classList.remove("opacity-50")
-        dragEl.style.pointerEvents = "auto"
       }, 200)
     }
   }, 10)
