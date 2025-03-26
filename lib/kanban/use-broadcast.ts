@@ -12,13 +12,18 @@ import {
 import { useSidebar } from "@/components/ui/sidebar"
 
 const myname = `master-${(1 + Math.random()).toFixed(3)}`
-const socket = new WebSocket(`ws://192.168.10.132:8000?user=${myname}`)
+const socket = new WebSocket(
+  `wss://kanban-backend-dpvv.onrender.com?user=${myname}`,
+)
 
-export default function useBroadCast(setCols: (data: MessageProps["message"]["drop"]) => void) {
+export default function useBroadCast(
+  setCols: (data: MessageProps["message"]["drop"]) => void,
+  handleActiveRemote: (id: string, action: "add" | "remove") => void,
+) {
   const ws = useRef<WebSocket | null>(socket)
   const { open } = useSidebar()
   const sidebarOffsetX = open ? 0 : 208
-  const isBroadcasting = useRef<boolean>(false)
+  const isJackedIn = useRef<boolean>(false)
   const [users, setUsers] = useState<string[]>([])
   const [connectionStatus, setConnectionStatus] = useState<
     "pending" | "connected" | "closing" | "disconnected"
@@ -81,7 +86,7 @@ export default function useBroadCast(setCols: (data: MessageProps["message"]["dr
   }, [connectionStatus, ws])
 
   const connectOperator = useCallback(() => {
-    isBroadcasting.current = true
+    isJackedIn.current = true
     manualDisconnect.current = false
     // Check for connection
     if (
@@ -91,7 +96,9 @@ export default function useBroadCast(setCols: (data: MessageProps["message"]["dr
     ) {
       console.info("Creating new WS connection")
 
-      ws.current = new WebSocket(`ws://192.168.10.132:8000?user=${myname}`)
+      ws.current = new WebSocket(
+        `wss://kanban-backend-dpvv.onrender.com?user=${myname}`,
+      )
 
       // Force a rerender of users to reset the ws.onmessage
       setUsers((prev) => prev.map((user) => user))
@@ -114,12 +121,12 @@ export default function useBroadCast(setCols: (data: MessageProps["message"]["dr
     ws.current.close()
     setUsers([])
     checkAndSetStatus()
-    isBroadcasting.current = false
+    isJackedIn.current = false
   }, [checkAndSetStatus, ws])
 
   const broadcastOperator = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (!isBroadcasting.current && !manualDisconnect.current) {
+      if (!isJackedIn.current && !manualDisconnect.current) {
         connectOperator()
       }
       const containerEl = document.getElementById(scrollRef.current?.id ?? "")
@@ -147,12 +154,13 @@ export default function useBroadCast(setCols: (data: MessageProps["message"]["dr
       const containerEl = document.getElementById(scrollRef.current?.id ?? "")
       const scrollXContainer = document.querySelector("div.dnd-columns")
       const viewPortEl = containerEl?.children.item(1)
-      
+
       const offsetX =
         (event.active.rect.current.translated?.left ?? 0) +
         (viewPortEl?.scrollLeft ?? 0) +
         (scrollXContainer?.scrollLeft ?? 0) +
-        window.scrollX + sidebarOffsetX
+        window.scrollX +
+        sidebarOffsetX
       const offsetY =
         (event.active.rect.current.translated?.top ?? 0) +
         (viewPortEl?.scrollTop ?? 0) +
@@ -209,11 +217,11 @@ export default function useBroadCast(setCols: (data: MessageProps["message"]["dr
     [msg, checkAndSetStatus],
   )
 
-  const broadcastNewState = useCallback(
-    (data: MessageProps['message']['drop']) => {
+  const broadcastSort = useCallback(
+    (data: MessageProps["message"]["sort"]) => {
       msg({
-        type: "newState",
-        drop: data
+        type: "sort",
+        sort: data,
       })
     },
     [msg],
@@ -237,7 +245,7 @@ export default function useBroadCast(setCols: (data: MessageProps["message"]["dr
           drop,
           cancel,
           move,
-          newState,
+          sort,
           x,
           y,
         },
@@ -268,9 +276,8 @@ export default function useBroadCast(setCols: (data: MessageProps["message"]["dr
         }
       }
 
-      if (type === "newState") {
-        throw new Error('THIS NO LONGER WORKS, CREATE NEW FUNCTION')
-        // setCols(drop)
+      if (type === "sort") {
+        setCols(sort)
       }
 
       if (type === "move") {
@@ -278,6 +285,7 @@ export default function useBroadCast(setCols: (data: MessageProps["message"]["dr
       }
 
       if (type === "start") {
+        handleActiveRemote(start?.itemId as string, "add")
         startDragRemoteOperator(start)
       }
       if (type === "drag") {
@@ -286,10 +294,12 @@ export default function useBroadCast(setCols: (data: MessageProps["message"]["dr
       }
       if (type === "cancel") {
         console.info("cancel")
+        handleActiveRemote(cancel?.itemId as string, "remove")
         cancelRemoteOperator(cancel)
       }
       if (type === "drop") {
         console.info("drop")
+        handleActiveRemote(drop?.itemId as string, "remove")
         dropRemoteOperator(drop, setCols)
         // deployAgent()
       }
@@ -314,6 +324,6 @@ export default function useBroadCast(setCols: (data: MessageProps["message"]["dr
     endDragBroadcast,
     startBroadcast,
     setOverRef,
-    broadcastNewState,
+    broadcastSort,
   }
 }

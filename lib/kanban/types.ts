@@ -27,7 +27,7 @@ export type MessageProps = {
       | "drop"
       | "cancel"
       | "scroll"
-      | "newState"
+      | "sort"
     x?: number
     y?: number
     newState?: ColumnProps[]
@@ -59,6 +59,7 @@ export type MessageProps = {
       newCol: string
       newIndex: number
     }
+    add?: ItemProps
     drop?: {
       itemId: string
       newCol: string

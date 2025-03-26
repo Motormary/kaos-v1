@@ -25,6 +25,7 @@ import ConnectionBar from "./connection-bar"
 import DropContainer from "./drop-container"
 import Item from "./item"
 import SortableItem from "./sortable-item"
+import { cn } from "@/lib/utils"
 /* 
 todo: barrel imports
 todo: offline storage for owner
@@ -40,6 +41,7 @@ export default function KanbanBoard() {
   const [activeItem, setActiveItem] = useState<ItemProps | null>(null)
   const sourceCol = useRef<string | null>(null)
   const sourceItem = useRef<ItemProps | null>(null)
+  const [activeRemoteItemIds, setActiveRemoteItemIds] = useState<string[]>([])
 
   /* const handleAddItem = useCallback((data: MessageProps['message']['drop']) => {
     setCols(prev => prev.map(col => {
@@ -50,78 +52,88 @@ export default function KanbanBoard() {
     }))
   }, []) */
 
-  const handleSetCols = useCallback(
-    (data: MessageProps["message"]["drop"]) => {
-      const localItem: ItemProps = cols.reduce((acc, col) => {
-        const isItem = col.items.find((item) => item.id === data?.itemId)
-        if (isItem) acc = isItem
-        return acc
-      }, {} as ItemProps)
-
-      if (data?.newCol === localItem.col) {
-        if (typeof data.newIndex === "number") {
-          // Reorder items
-          setCols((prev) =>
-            prev.map((col) => {
-              if (col.id === localItem.col) {
-                return {
-                  ...col,
-                  items: reorderItems(
-                    col.items,
-                    localItem.index,
-                    data.newIndex as number,
-                  ),
-                }
-              } else return col
-            }),
-          )
-        } else {
-          // Add to end of column
-          setCols((prev) =>
-            prev.map((col) => {
-              if (col.id === data.newCol) {
-                const filteredItems = [
-                  ...col.items.filter((item) => item.id !== data.itemId),
-                  localItem,
-                ]
-                const newItems = filteredItems.map((i, index) => ({
-                  ...i,
-                  index,
-                }))
-
-                return {
-                  ...col,
-                  items: newItems,
-                }
-              } else return col
-            }),
-          )
-        }
+  const handleActiveRemote = useCallback(
+    (id: string, action: "add" | "remove") => {
+      console.log(activeRemoteItemIds)
+      if (action === "add") {
+        const newItems = [...activeRemoteItemIds, id]
+        setActiveRemoteItemIds(newItems)
       }
+      if (action === "remove") {
+        const newItems = activeRemoteItemIds.filter(
+          (remoteId) => remoteId !== id,
+        )
+        setActiveRemoteItemIds(newItems)
+      }
+    },
+    [activeRemoteItemIds],
+  )
 
-      if (data?.newCol !== localItem.col) {
+  function handleRemoteStateChange(data: MessageProps["message"]["drop"]) {
+    const localItem: ItemProps = cols.reduce((acc, col) => {
+      const isItem = col.items.find((item) => item.id === data?.itemId)
+      if (isItem) acc = isItem
+      return acc
+    }, {} as ItemProps)
+
+    if (data?.newCol === localItem.col) {
+      if (typeof data.newIndex === "number") {
+        // Reorder items
         setCols((prev) =>
           prev.map((col) => {
-            if (col.id === data?.newCol) {
-              const newCol = addToCol(col, localItem)
+            if (col.id === localItem.col) {
               return {
-                ...newCol,
-                items:
-                  typeof data.newIndex === "number"
-                    ? reorderItems(
-                        newCol.items,
-                        col.items.length,
-                        data.newIndex,
-                      )
-                    : newCol.items,
+                ...col,
+                items: reorderItems(
+                  col.items,
+                  localItem.index,
+                  data.newIndex as number,
+                ),
               }
-            } else return removeFromCol(col, data?.itemId as string)
+            } else return col
+          }),
+        )
+      } else {
+        // Add to end of column
+        setCols((prev) =>
+          prev.map((col) => {
+            if (col.id === data.newCol) {
+              const filteredItems = [
+                ...col.items.filter((item) => item.id !== data.itemId),
+                localItem,
+              ]
+              const newItems = filteredItems.map((i, index) => ({
+                ...i,
+                index,
+              }))
+
+              return {
+                ...col,
+                items: newItems,
+              }
+            } else return col
           }),
         )
       }
-    },
-    [cols],
-  )
+    }
+
+    if (data?.newCol !== localItem.col) {
+      setCols((prev) =>
+        prev.map((col) => {
+          if (col.id === data?.newCol) {
+            const newCol = addToCol(col, localItem)
+            return {
+              ...newCol,
+              items:
+                typeof data.newIndex === "number"
+                  ? reorderItems(newCol.items, col.items.length, data.newIndex)
+                  : newCol.items,
+            }
+          } else return removeFromCol(col, data?.itemId as string)
+        }),
+      )
+    }
+  }
 
   const colCount = cols?.length ? cols.length : 1
   const {
@@ -135,129 +147,125 @@ export default function KanbanBoard() {
     startBroadcast,
     disconnectOperator,
     setOverRef,
-    //broadcastNewState,
-  } = useBroadCast(handleSetCols)
+    broadcastSort,
+  } = useBroadCast(handleRemoteStateChange, handleActiveRemote)
 
-  const handleDragOver = useCallback(
-    (e: DragOverEvent) => {
-      if (!e.over?.data?.current || !activeItem) return
-      const sourceColId = activeItem.col
-      const targetColId = e.over.data.current.col
-      const over = e.over.data.current as ItemProps & { type: "item" | "drop" }
+  function handleDragOver(e: DragOverEvent) {
+    if (!e.over?.data?.current || !activeItem) return
+    const sourceColId = activeItem.col
+    const targetColId = e.over.data.current.col
+    const over = e.over.data.current as ItemProps & { type: "item" | "drop" }
 
-      /**
-       * If hovered column is not the source-column, add the dragged item to hovered column and remove it from previous
-       */
-      if (targetColId !== sourceColId) {
-        const newCols = cols.map((col) => {
-          if (col.id === over.col) {
-            const newItem = { ...activeItem }
-            newItem.index = col.items.length
-            newItem.col = col.id
-            setActiveItem(newItem)
-            //todo: add item to remote clients
-            return addToCol(col, activeItem)
-          } else {
-            return removeFromCol(col, activeItem.id)
-          }
-        })
-        setCols(newCols)
-      } else if (targetColId === sourceColId && over.type === "drop") {
-        // this simply makes it possible to drag and drop at the bottom of the container
-        setCols((prev) =>
-          prev.map((col) => {
-            if (col.id === activeItem.col) {
-              const newItems = [
-                ...col.items.filter((item) => item.id !== activeItem.id),
-                activeItem,
-              ]
-              return {
-                ...col,
-                items: newItems,
-              }
-            } else return col
-          }),
-        )
-      }
-      if (over) setOverRef(document.getElementById(over?.col) ?? null) // dependency of remote animation @ useBroadcast.ts
-    },
-    [activeItem, cols, setOverRef],
-  )
-
-  const handleDragStart = useCallback(
-    (event: DragStartEvent) => {
-      startBroadcast(event) // Will connect user to websocket on dragStart (dev purposes)
-      sourceCol.current = event.active.data?.current?.col // Source of initiated drag event
-      sourceItem.current = event.active.data.current as ItemProps
-      setActiveItem(event.active.data.current as ItemProps) // Currently dragged item
-    },
-    [startBroadcast],
-  )
-
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const over = event?.over?.data.current as ItemProps & {
-        type: "item" | "drop"
-      }
-
-      const isOverItem = over?.type === "item"
-
-      /**
-       * Cancel drag-event if item has not been moved from source location and/or column
-       */
-      if (over?.id === activeItem?.id && sourceCol.current === over?.col) {
-        setActiveItem(null)
-        sourceCol.current = null
-        sourceItem.current = null
-        cancelDragBroadcast(event)
-        return
-      }
-
-      /**
-       * If hovering an item, swap active items' index with hovered item
-       */
-      if (isOverItem) {
-        const newCols = cols.map((col) => {
-          if (col.id === over?.col) {
+    /**
+     * If hovered column is not the source-column, add the dragged item to hovered column and remove it from previous
+     */
+    if (targetColId !== sourceColId) {
+      const newCols = cols.map((col) => {
+        if (col.id === over.col) {
+          const newItem = { ...activeItem }
+          newItem.index = col.items.length
+          newItem.col = col.id
+          setActiveItem(newItem)
+          //todo: add item to remote clients
+          broadcastSort({
+            itemId: newItem.id,
+            newCol: newItem.col,
+            newIndex: over.type === "item" ? over.index : newItem.index,
+          })
+          return addToCol(col, activeItem)
+        } else {
+          return removeFromCol(col, activeItem.id)
+        }
+      })
+      setCols(newCols)
+    } else if (targetColId === sourceColId && over.type === "drop") {
+      // this simply makes it possible to drag and drop at the bottom of the container
+      setCols((prev) =>
+        prev.map((col) => {
+          if (col.id === activeItem.col) {
+            const newItems = [
+              ...col.items.filter((item) => item.id !== activeItem.id),
+              activeItem,
+            ]
             return {
               ...col,
-              items: reorderItems(
-                col.items,
-                activeItem?.index as number,
-                over.index as number,
-              ),
+              items: newItems,
             }
+          } else return col
+        }),
+      )
+    }
+    if (over) setOverRef(document.getElementById(over?.col) ?? null) // dependency of remote animation @ useBroadcast.ts
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    startBroadcast(event) // Will connect user to websocket on dragStart (dev purposes)
+    sourceCol.current = event.active.data?.current?.col // Source of initiated drag event
+    sourceItem.current = event.active.data.current as ItemProps
+    setActiveItem(event.active.data.current as ItemProps) // Currently dragged item
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const over = event?.over?.data.current as ItemProps & {
+      type: "item" | "drop"
+    }
+
+    const isOverItem = over?.type === "item"
+
+    /**
+     * Cancel drag-event if item has not been moved from source location and/or column
+     */
+    if (over?.id === activeItem?.id && sourceCol.current === over?.col) {
+      setActiveItem(null)
+      sourceCol.current = null
+      sourceItem.current = null
+      cancelDragBroadcast(event)
+      return
+    }
+
+    /**
+     * If hovering an item, swap active items' index with hovered item
+     */
+    if (isOverItem) {
+      const newCols = cols.map((col) => {
+        if (col.id === over?.col) {
+          return {
+            ...col,
+            items: reorderItems(
+              col.items,
+              activeItem?.index as number,
+              over.index as number,
+            ),
           }
-          return col
-        })
+        }
+        return col
+      })
 
-        endDragBroadcast(event, {
-          itemId: activeItem?.id as string,
-          newCol: activeItem?.col as string,
-          newIndex: over.index as number,
-        })
-        setCols(newCols)
-        setActiveItem(null)
-        sourceCol.current = null
-        sourceItem.current = null
-
-        return
-      }
-
-      /**
-       * Item has been added to end of new column (locally with handleDragOver), update remote clients.
-       */
       endDragBroadcast(event, {
         itemId: activeItem?.id as string,
         newCol: activeItem?.col as string,
         newIndex: over.index as number,
       })
+      setCols(newCols)
       setActiveItem(null)
       sourceCol.current = null
       sourceItem.current = null
-    },
-    [cancelDragBroadcast, cols, endDragBroadcast, sourceCol, activeItem],
-  )
+
+      return
+    }
+
+    /**
+     * Item has been added to end of new column (locally with handleDragOver), update remote clients.
+     */
+    endDragBroadcast(event, {
+      itemId: activeItem?.id as string,
+      newCol: activeItem?.col as string,
+      newIndex: over.index as number,
+    })
+    setActiveItem(null)
+    sourceCol.current = null
+    sourceItem.current = null
+  }
 
   const keyboardSensor = useSensor(KeyboardSensor, {
     keyboardCodes: {
@@ -278,48 +286,42 @@ export default function KanbanBoard() {
   const mouseSensor = useSensor(MouseSensor)
   const sensors = useSensors(keyboardSensor, mouseSensor, touchSensor)
 
-  const handleAddItem = useCallback(
-    (columnId: string) => {
-      const newCols = cols.map((col) => {
-        if (col.id === columnId) {
-          const newItem = {
-            id: Math.random().toString(),
-            index: col.items.length,
-            col: columnId,
-            title: "New item!",
-            body: "Successfully added new item.",
-            prio: 2,
-            icon: "Trophy",
-            value: 100000,
-          }
-          return {
-            ...col,
-            items: [...col.items, newItem],
-          }
+  function handleAddItem(columnId: string) {
+    const newCols = cols.map((col) => {
+      if (col.id === columnId) {
+        const newItem = {
+          id: Math.random().toString(),
+          index: col.items.length,
+          col: columnId,
+          title: "New item!",
+          body: "Successfully added new item.",
+          prio: 2,
+          icon: "Trophy",
+          value: 100000,
         }
-        return col
-      })
-      //! NEW FUNCTION NEEDED
-      /*       broadcastNewState({
+        return {
+          ...col,
+          items: [...col.items, newItem],
+        }
+      }
+      return col
+    })
+    //! NEW FUNCTION NEEDED
+    /*       broadcastNewState({
         itemId: newItem.id,
         newCol: col.id,
         newIndex: col.items.length,
       }) */
-      setCols(newCols)
-    },
-    [cols],
-  )
+    setCols(newCols)
+  }
 
-  const handleCancel = useCallback(
-    (e: DragCancelEvent) =>
-      endDragBroadcast(e, {
-        itemId: activeItem?.id as string,
-        newCol: activeItem?.col as string,
-        newIndex: activeItem?.index,
-      }),
-    [endDragBroadcast, activeItem],
-  )
-
+  function handleCancel(e: DragCancelEvent) {
+    endDragBroadcast(e, {
+      itemId: activeItem?.id as string,
+      newCol: activeItem?.col as string,
+      newIndex: activeItem?.index,
+    })
+  }
   return (
     <div
       onPointerMove={broadcastOperator}
@@ -355,6 +357,11 @@ export default function KanbanBoard() {
                 >
                   {col.items.map((item, index) => (
                     <SortableItem
+                      className={cn(
+                        activeRemoteItemIds.some(
+                          (remoteItem) => remoteItem === item.id,
+                        ) && "pointer-events-none opacity-50",
+                      )}
                       key={item.id + index}
                       colIndex={colIndex}
                       index={index}
