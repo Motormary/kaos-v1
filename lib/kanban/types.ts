@@ -1,4 +1,3 @@
-
 export type ItemProps = {
   id: string
   index: number
@@ -35,7 +34,7 @@ export type MessageProps = {
     currentUsers?: string[]
     overCol?: string
     scroll?: {
-      user: string,
+      user: string
       y: number
       x?: number
       containerId: string
@@ -55,10 +54,15 @@ export type MessageProps = {
       overCol: string
       itemId: string
     }
+    sort?: {
+      itemId: string
+      newCol: string
+      newIndex: number
+    }
     drop?: {
-      itemId: string,
-      newCol: string,
-      newIndex?: number,
+      itemId: string
+      newCol: string
+      newIndex?: number
     }
     cancel?: {
       itemId: string

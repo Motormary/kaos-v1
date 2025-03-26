@@ -44,11 +44,12 @@ export function reorderItems(
 
   const sortedArray = arrayMove(items, activeIndex, overIndex)
 
-  sortedArray.forEach((i, index) => {
-    i.index = index
-  })
+  const updatedArray = sortedArray.map((item, index) => ({
+    ...item,
+    index, // Assign new index
+  }))
 
-  return sortedArray
+  return updatedArray
 }
 
 export function moveRemoteOperator(
@@ -105,7 +106,7 @@ export function dragRemoteOperator(
   drag: MessageProps["message"]["drag"],
   x: number | undefined,
   y: number | undefined,
-  sidebarOffset: number
+  sidebarOffset: number,
 ) {
   const cloneEl = document.getElementById(`${drag?.itemId}-clone`)
   const dragEl = document.getElementById(drag?.itemId as string)
@@ -118,7 +119,8 @@ export function dragRemoteOperator(
     (x ?? 0) -
     window.scrollX -
     (dndRect?.left ?? 0) -
-    (scrollXContainer?.scrollLeft ?? 0) - sidebarOffset
+    (scrollXContainer?.scrollLeft ?? 0) -
+    sidebarOffset
   const offsetY = (y ?? 0) - window.scrollY - (dndRect?.top ?? 0)
   cloneEl.style.left = `${offsetX}px`
   cloneEl.style.top = `${offsetY}px`
@@ -141,10 +143,9 @@ export function cancelRemoteOperator(
     /**
      *? Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
      */
-      cloneEl.remove()
-      dragEl?.classList.remove("opacity-50")
-      dragEl.style.pointerEvents = "auto"
-
+    cloneEl.remove()
+    dragEl?.classList.remove("opacity-50")
+    dragEl.style.pointerEvents = "auto"
   }
 }
 
@@ -160,30 +161,29 @@ export function dropRemoteOperator(
     console.error("Error in (cancel): Missing params => dragEl:", drop?.itemId)
     return
   }
-  setCols({...drop} as MessageProps["message"]["drop"])
+  setCols({ ...drop } as MessageProps["message"]["drop"])
   /**
    *? Makes sure column state can rerender
    */
 
-    setTimeout(() => {
-      if (cloneEl) {
-        const newEl = document.getElementById(drop?.itemId as string)
-        const containerEL = document.getElementById(drop?.newCol as string)
-        if (!newEl || !containerEL) return
-        const newRect = newEl.getBoundingClientRect()
-        cloneEl.style.transition = "top 200ms ease, left 200ms ease"
-        cloneEl.style.left = `${newRect.left - (dndRect?.left ?? 0)}px`
-        cloneEl.style.top = `${newRect.top - (dndRect?.top ?? 0)}px`
-        
-        /**
-         *? Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
-         */
-        setTimeout(() => {
-          cloneEl.remove()
-          dragEl?.classList.remove("opacity-50")
-          dragEl.style.pointerEvents = "auto"
-          
-        }, 200)
-      }
-    }, 10)
+  setTimeout(() => {
+    if (cloneEl) {
+      const newEl = document.getElementById(drop?.itemId as string)
+      const containerEL = document.getElementById(drop?.newCol as string)
+      if (!newEl || !containerEL) return
+      const newRect = newEl.getBoundingClientRect()
+      cloneEl.style.transition = "top 200ms ease, left 200ms ease"
+      cloneEl.style.left = `${newRect.left - (dndRect?.left ?? 0)}px`
+      cloneEl.style.top = `${newRect.top - (dndRect?.top ?? 0)}px`
+
+      /**
+       *? Waits for transition end. Alternative for listening to transitionend, in case transition never occurred.
+       */
+      setTimeout(() => {
+        cloneEl.remove()
+        dragEl?.classList.remove("opacity-50")
+        dragEl.style.pointerEvents = "auto"
+      }, 200)
+    }
+  }, 10)
 }

@@ -31,6 +31,7 @@ todo: offline storage for owner
 todo: Add/remove function for columns/items
 todo: add throttle... again (Get around the compiler .current @ render)
 todo: fix/bundle types/params for functions
+todo: broadcast state on dragOver to avoid index collisions
 !bug: fix mobile drag offset
  */
 
@@ -58,7 +59,8 @@ export default function KanbanBoard() {
       }, {} as ItemProps)
 
       if (data?.newCol === localItem.col) {
-        if (data.newIndex) {
+        if (typeof data.newIndex === "number") {
+          // Reorder items
           setCols((prev) =>
             prev.map((col) => {
               if (col.id === localItem.col) {
@@ -70,18 +72,23 @@ export default function KanbanBoard() {
                     data.newIndex as number,
                   ),
                 }
-              }
-              return col
+              } else return col
             }),
           )
         } else {
+          // Add to end of column
           setCols((prev) =>
             prev.map((col) => {
               if (col.id === data.newCol) {
-                const newItems = [
+                const filteredItems = [
                   ...col.items.filter((item) => item.id !== data.itemId),
                   localItem,
                 ]
+                const newItems = filteredItems.map((i, index) => ({
+                  ...i,
+                  index,
+                }))
+
                 return {
                   ...col,
                   items: newItems,
@@ -108,8 +115,7 @@ export default function KanbanBoard() {
                       )
                     : newCol.items,
               }
-            }
-            return removeFromCol(col, data?.itemId as string)
+            } else return removeFromCol(col, data?.itemId as string)
           }),
         )
       }
@@ -138,7 +144,6 @@ export default function KanbanBoard() {
       const sourceColId = activeItem.col
       const targetColId = e.over.data.current.col
       const over = e.over.data.current as ItemProps & { type: "item" | "drop" }
-      console.log("🚀 ~ KanbanBoard ~ over:", over)
 
       /**
        * If hovered column is not the source-column, add the dragged item to hovered column and remove it from previous
