@@ -1,7 +1,8 @@
+import { useSidebar } from "@/components/ui/sidebar"
 import { DragCancelEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core"
 import throttle from "lodash.throttle"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ColumnProps, ItemProps, MessageProps } from "./types"
+import { MessageProps } from "./types"
 import {
   cancelRemoteOperator,
   dragRemoteOperator,
@@ -9,11 +10,10 @@ import {
   moveRemoteOperator,
   startDragRemoteOperator,
 } from "./utils"
-import { useSidebar } from "@/components/ui/sidebar"
 
 const myname = `master-${(1 + Math.random()).toFixed(3)}`
 const socket = new WebSocket(
-  `wss://kanban-backend-dpvv.onrender.com?user=${myname}`,
+  `ws://192.168.10.132:8000?user=${myname}`,
 )
 
 export default function useBroadCast(
@@ -97,7 +97,7 @@ export default function useBroadCast(
       console.info("Creating new WS connection")
 
       ws.current = new WebSocket(
-        `wss://kanban-backend-dpvv.onrender.com?user=${myname}`,
+        `ws://192.168.10.132:8000?user=${myname}`,
       )
 
       // Force a rerender of users to reset the ws.onmessage

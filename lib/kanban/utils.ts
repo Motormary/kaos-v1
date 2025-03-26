@@ -23,10 +23,14 @@ export function removeFromCol(col: ColumnProps, activeId: string): ColumnProps {
     throw new Error("Error removing item from column, params missing")
   }
 
-  return {
+  const filteredCol = {
     ...col,
-    items: col.items.filter((item) => item.id !== activeId),
+    items: col.items
+      .filter((item) => item.id !== activeId)
+      .map((item, index) => ({ ...item, index })),
   }
+
+  return filteredCol
 }
 
 export function reorderItems(

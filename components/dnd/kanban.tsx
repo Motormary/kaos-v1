@@ -184,16 +184,20 @@ export default function KanbanBoard() {
             if (col.id === activeItem.col) {
               const newItems = [
                 ...col.items.filter((item) => item.id !== activeItem.id),
-                activeItem,
               ]
+              newItems.push(activeItem)
+              const updatedItems = newItems.map((item, index) => ({
+                ...item,
+                index,
+              }))
               return {
                 ...col,
-                items: newItems,
+                items: updatedItems,
               }
             } else return col
           }),
         )
-      } else if (over.type === "item" && over.id !== activeItem.id) {
+      } else if (over.type === "item") {
         broadcastSort({
           itemId: activeItem.id,
           newCol: over.col,

@@ -1,8 +1,10 @@
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { RegisterSchema } from "@/lib/auth/schemas"
+import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { UseFormReturn } from "react-hook-form"
+import { z } from "zod"
 import {
   FormControl,
   FormDescription,
@@ -11,9 +13,6 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form"
-import { UseFormReturn } from "react-hook-form"
-import { RegisterSchema } from "@/lib/auth/schemas"
-import { z } from "zod"
 
 export function RegisterForm({
   form,
