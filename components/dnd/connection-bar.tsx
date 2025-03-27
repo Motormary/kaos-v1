@@ -82,9 +82,13 @@ export default memo(ConnectionBar)
 function PendingConnection() {
   return (
     <div className="grid [grid-template-areas:'stack'] [&>*]:stroke-orange-400 [&>*]:[grid-area:stack]">
-      <Wifi style={{ animation: "in 2000ms linear 750ms infinite" }} />
-      <WifiHigh style={{ animation: "in 2000ms linear 500ms infinite" }} />
-      <WifiLow style={{ animation: "in 2000ms linear 250ms infinite" }} />
+      <Wifi style={{ animation: "fadeInOut 2000ms linear 750ms infinite" }} />
+      <WifiHigh
+        style={{ animation: "fadeInOut 2000ms linear 500ms infinite" }}
+      />
+      <WifiLow
+        style={{ animation: "fadeInOut 2000ms linear 250ms infinite" }}
+      />
       <WifiZero />
     </div>
   )
