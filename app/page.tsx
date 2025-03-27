@@ -1,7 +1,9 @@
-import { auth } from "./layout"
+import { createClient } from "@/lib/supabase/server"
 
-export default function Home() {
-  if (!auth)
+export default async function Home() {
+  const client = await createClient()
+  const auth = await client.auth.getUser()
+  if (auth.error)
     return (
       <div className="h-screen w-full p-5">
         <div className="max-w-content m-auto grid h-full">

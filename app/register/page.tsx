@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import z from "zod"
 import { Form } from "@/components/ui/form"
 import { RegisterSchema } from "@/lib/auth/schemas"
+import { signup } from "../actions/auth"
 
 export default function RegisterPage() {
   const form = useForm<z.infer<typeof RegisterSchema>>({
@@ -20,6 +21,7 @@ export default function RegisterPage() {
   })
 
   async function onSubmit(data: z.infer<typeof RegisterSchema>) {
+    signup(data)
     console.log(data)
   }
 
