@@ -61,7 +61,9 @@ function Inset({ children }: props) {
           </Breadcrumb>
         </div>
       </header>
-      <div>{children}</div>
+      <div className="flex h-[calc(100vh-3rem)] flex-col overflow-y-auto [&>*]:grow">
+        {children}
+      </div>
     </SidebarInset>
   )
 }

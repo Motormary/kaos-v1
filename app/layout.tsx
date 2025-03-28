@@ -28,8 +28,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const client = await createClient()
-  const auth = await client.auth.getUser()
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -48,7 +46,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {!auth.error ? <AuthedLayout>{children}</AuthedLayout> : children}
+          <AuthedLayout>{children}</AuthedLayout>
           <ModeToggle />
           <BackgroundImage />
         </ThemeProvider>
