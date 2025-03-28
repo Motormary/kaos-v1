@@ -21,18 +21,19 @@ import { ReactNode } from "react"
 
 type props = {
   children: ReactNode
+  defaultOpen: boolean
 }
 
-export default function AuthedLayout({ children }: props) {
+export default function AuthedLayout({ children, defaultOpen }: props) {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
       <Inset>{children}</Inset>
     </SidebarProvider>
   )
 }
 
-function Inset({ children }: props) {
+function Inset({ children }: { children: React.ReactNode }) {
   const { open } = useSidebar()
 
   const width = open ? "calc(100% - 16rem)" : "calc(100% - 48px)"

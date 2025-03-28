@@ -1,11 +1,11 @@
-import localFont from "next/font/local"
-import "./globals.css"
+import AuthedLayout from "@/components/auth/auth-layout"
+import BackgroundImage from "@/components/background"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ModeToggle } from "@/components/theme-toggle-button"
+import localFont from "next/font/local"
+import { cookies } from "next/headers"
 import { Metadata } from "next/types"
-import BackgroundImage from "@/components/background"
-import AuthedLayout from "@/components/auth/auth-layout"
-import { createClient } from "@/lib/supabase/server"
+import "./globals.css"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,6 +28,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const cookieStore = await cookies()
+
+  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
+  console.log("🚀 ~ defaultOpen:", defaultOpen)
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -46,7 +51,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthedLayout>{children}</AuthedLayout>
+          <AuthedLayout defaultOpen={defaultOpen}>{children}</AuthedLayout>
           <ModeToggle />
           <BackgroundImage />
         </ThemeProvider>
