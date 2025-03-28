@@ -19,7 +19,7 @@ import {
   useSensors,
 } from "@dnd-kit/core"
 import { SortableContext } from "@dnd-kit/sortable"
-import { MousePointer2 } from "lucide-react"
+import { MousePointer2, Plus } from "lucide-react"
 import { useCallback, useRef, useState } from "react"
 import ConnectionBar from "./connection-bar"
 import DropContainer from "./drop-container"
@@ -158,6 +158,7 @@ export default function KanbanBoard() {
      * If hovered column is not the source-column, add the dragged item to hovered column and remove it from previous
      */
     if (targetColId !== sourceColId) {
+      console.log("target noteq to source")
       const newCols = cols.map((col) => {
         if (col.id === over.col) {
           const newItem = { ...activeItem }
@@ -177,7 +178,9 @@ export default function KanbanBoard() {
       })
       setCols(newCols)
     } else if (targetColId === sourceColId) {
+      console.log("target eq to source")
       if (over.type === "drop") {
+        console.log(over.col)
         // this simply makes it possible to drag and drop at the bottom of the container
         setCols((prev) =>
           prev.map((col) => {
@@ -186,10 +189,23 @@ export default function KanbanBoard() {
                 ...col.items.filter((item) => item.id !== activeItem.id),
               ]
               newItems.push(activeItem)
-              const updatedItems = newItems.map((item, index) => ({
-                ...item,
-                index,
-              }))
+              const updatedItems = newItems.map((item, index) => {
+                if (item.id === activeItem.id) {
+                  setActiveItem({
+                    ...item,
+                    index,
+                  })
+                  broadcastSort({
+                    itemId: activeItem.id,
+                    newCol: over.col,
+                    newIndex: index,
+                  })
+                }
+                return {
+                  ...item,
+                  index,
+                }
+              })
               return {
                 ...col,
                 items: updatedItems,
@@ -225,7 +241,7 @@ export default function KanbanBoard() {
     /**
      * Cancel drag-event if item has not been moved from source location and/or column
      */
-    if (over?.id === activeItem?.id && sourceCol.current === over?.col) {
+    if (!over) {
       setActiveItem(null)
       sourceCol.current = null
       sourceItem.current = null
@@ -382,6 +398,12 @@ export default function KanbanBoard() {
               </SortableContext>
             )
           })}
+          <div
+            onDrop={(e) => e.preventDefault()}
+            className="text-muted hover:text-muted-foreground hover:bg-muted/50 dark:hover:bg-muted/20 grid min-h-[76svh] w-[340px] cursor-pointer place-items-center border"
+          >
+            <Plus />
+          </div>
         </div>
         {/* Drag animation */}
         <DragOverlay
@@ -411,6 +433,7 @@ export default function KanbanBoard() {
           ) : null}
         </DragOverlay>
       </DndContext>
+
       {/* Remote client cursors */}
       {connectionStatus === "connected" && users?.length
         ? users.map((user, index) => (
