@@ -2,15 +2,17 @@ import KanbanBoard from "@/components/dnd/kanban"
 import { createClient } from "@/lib/supabase/server"
 
 type props = {
-  params: Promise<{ id: string }>
+  params: Promise<{ collab_id: string }>
 }
 
 export default async function Colab({ params }: props) {
-  const id = (await params).id
+  const collab_id = (await params).collab_id
   const supabase = await createClient()
-  const { data, error } = await supabase.from("colabs").select().match({
-    colab_id: id,
-  })
+  const { data, error } = await supabase
+    .from("collabs")
+    .select()
+    .match({ collab_id })
+
   if (error) {
     console.error(error)
     throw new Error("Error fetching collabs", error)

@@ -44,7 +44,7 @@ export function NavProjects({
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
-              <Link href={item.url}>
+              <Link prefetch={false} href={item.url}>
                 <item.icon />
                 <span>{item.name}</span>
               </Link>

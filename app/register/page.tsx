@@ -22,7 +22,6 @@ export default function RegisterPage() {
 
   async function onSubmit(data: z.infer<typeof RegisterSchema>) {
     signup(data)
-    console.log(data)
   }
 
   return (

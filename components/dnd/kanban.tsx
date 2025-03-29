@@ -52,7 +52,6 @@ export default function KanbanBoard() {
 
   const handleActiveRemote = useCallback(
     (id: string, action: "add" | "remove") => {
-      console.log(activeRemoteItemIds)
       if (action === "add") {
         const newItems = [...activeRemoteItemIds, id]
         setActiveRemoteItemIds(newItems)
@@ -158,7 +157,6 @@ export default function KanbanBoard() {
      * If hovered column is not the source-column, add the dragged item to hovered column and remove it from previous
      */
     if (targetColId !== sourceColId) {
-      console.log("target noteq to source")
       const newCols = cols.map((col) => {
         if (col.id === over.col) {
           const newItem = { ...activeItem }
@@ -178,9 +176,7 @@ export default function KanbanBoard() {
       })
       setCols(newCols)
     } else if (targetColId === sourceColId) {
-      console.log("target eq to source")
       if (over.type === "drop") {
-        console.log(over.col)
         // this simply makes it possible to drag and drop at the bottom of the container
         setCols((prev) =>
           prev.map((col) => {
@@ -351,7 +347,7 @@ export default function KanbanBoard() {
   return (
     <div
       onPointerMove={broadcastOperator}
-      className="dnd-container relative z-50 flex shrink grow-0 flex-col overflow-hidden p-1"
+      className="dnd-container relative z-20 flex shrink grow-0 flex-col overflow-hidden p-1"
     >
       <ConnectionBar
         setOverRef={setOverRef}

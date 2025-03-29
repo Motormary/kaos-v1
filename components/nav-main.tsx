@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, type LucideIcon } from "lucide-react"
+import { ChevronRight, Plus, type LucideIcon } from "lucide-react"
 
 import {
   Collapsible,
@@ -18,6 +18,8 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/client"
+import { NewCollabDialog } from "./dnd/new-collab-dialog"
 
 export function NavMain({
   items,
@@ -35,8 +37,11 @@ export function NavMain({
 }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>Collabs</SidebarGroupLabel>
       <SidebarMenu>
+        <SidebarMenuItem>
+          <NewCollabDialog />
+        </SidebarMenuItem>
         {items.map((item) => (
           <Collapsible
             key={item.title}
@@ -57,7 +62,7 @@ export function NavMain({
                   {item.items?.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title}>
                       <SidebarMenuSubButton asChild>
-                        <Link href={subItem.url}>
+                        <Link prefetch={false} href={subItem.url}>
                           <span>{subItem.title}</span>
                         </Link>
                       </SidebarMenuSubButton>

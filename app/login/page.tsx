@@ -19,7 +19,6 @@ export default function LoginPage() {
   })
 
   async function onSubmit(data: z.infer<typeof LoginSchema>) {
-    console.log(data)
     await login(data)
   }
 

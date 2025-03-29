@@ -7,7 +7,6 @@ import { redirect } from "next/navigation"
 import { z } from "zod"
 
 export async function login(data: z.infer<typeof LoginSchema>) {
-  console.log("🚀 ~ login ~ data:", data)
   const supabase = await createClient()
 
   const { error } = await supabase.auth.signInWithPassword(data)
@@ -28,7 +27,7 @@ export async function signup(data: z.infer<typeof RegisterSchema>) {
   const { error } = await supabase.auth.signUp(data)
 
   if (error) {
-    console.log("🚀 ~ signup ~ error:", error)
+    console.error("🚀 ~ signup ~ error:", error)
     redirect("/error")
   }
 

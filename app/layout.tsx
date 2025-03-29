@@ -6,6 +6,7 @@ import localFont from "next/font/local"
 import { cookies } from "next/headers"
 import { Metadata } from "next/types"
 import "./globals.css"
+import { Toaster } from "@/components/ui/sonner"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -31,7 +32,6 @@ export default async function RootLayout({
   const cookieStore = await cookies()
 
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
-  console.log("🚀 ~ defaultOpen:", defaultOpen)
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -54,6 +54,7 @@ export default async function RootLayout({
           <AuthedLayout defaultOpen={defaultOpen}>{children}</AuthedLayout>
           <ModeToggle />
           <BackgroundImage />
+          <Toaster richColors />
         </ThemeProvider>
       </body>
     </html>

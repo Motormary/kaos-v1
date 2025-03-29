@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import {
   AudioWaveform,
   BookOpen,
@@ -13,9 +12,9 @@ import {
   Settings2,
   SquareTerminal,
 } from "lucide-react"
+import * as React from "react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
@@ -158,7 +157,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar className="z-[9999] overflow-hidden" collapsible="icon" {...props}>
+    <Sidebar className="z-20 overflow-hidden" collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>

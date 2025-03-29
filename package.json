@@ -36,13 +36,15 @@
     "lucide-react": "^0.459.0",
     "motion": "^12.4.10",
     "next": "15.2.3",
-    "next-themes": "^0.4.4",
+    "next-themes": "^0.4.6",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-hook-form": "^7.54.2",
     "server-only": "^0.0.1",
+    "sonner": "^2.0.2",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
+    "vaul": "^1.1.2",
     "zod": "^3.24.2"
   },
   "devDependencies": {
