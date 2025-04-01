@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client"
+import { createCollab } from "@/app/actions/collab/post"
 import { cn } from "@/lib/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -15,7 +15,7 @@ import {
 } from "../ui/form"
 import { Input } from "../ui/input"
 
-const NewCollabSchema = z.object({
+export const NewCollabSchema = z.object({
   title: z
     .string()
     .min(2, { message: "Collab title must be minimum 2 characters." }),
@@ -27,34 +27,28 @@ export default function NewCollabForm({
 }: React.ComponentProps<"form"> & {
   setOpen: (state: boolean) => void
 }) {
-  const supabase = createClient()
   const form = useForm<z.infer<typeof NewCollabSchema>>({
     resolver: zodResolver(NewCollabSchema),
     defaultValues: {
       title: "",
     },
   })
+
   const {
     formState: { isSubmitting },
   } = form
 
-  async function onSubmit(data: z.infer<typeof NewCollabSchema>) {
-    const { data: userData, error } = await supabase.auth.getUser()
-    if (error) {
-      console.error("Error fetching auth:", error)
-    }
+  const throwErrorToast = () =>
+    toast.error("Error", {
+      description: "Something went wrong, try again or contact support.",
+    })
 
-    const dataWithOwner = { ...data, owner: userData?.user?.id }
+  async function onSubmit(formData: z.infer<typeof NewCollabSchema>) {
+    const { success, error } = await createCollab(formData)
 
-    const { error: insertError } = await supabase
-      .from("collabs")
-      .insert(dataWithOwner)
-
-    if (insertError) {
-      console.error("Error creating new collab", insertError)
-      toast.error("Error", {
-        description: "Something went wrong, try again or contact support.",
-      })
+    if (!success) {
+      console.error("Error creating new collab", error)
+      throwErrorToast()
     } else {
       toast.success("Success", {
         description: "New collab created",

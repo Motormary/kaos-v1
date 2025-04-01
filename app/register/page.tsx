@@ -21,6 +21,8 @@ export default function RegisterPage() {
   })
 
   async function onSubmit(data: z.infer<typeof RegisterSchema>) {
+    //! await supabase.auth.updateUser({ data: { display_name: "Mathias Moen" } })
+
     signup(data)
   }
 
