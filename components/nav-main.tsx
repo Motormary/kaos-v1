@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, Plus, type LucideIcon } from "lucide-react"
+import { ChevronRight, type LucideIcon } from "lucide-react"
 
 import {
   Collapsible,
@@ -18,7 +18,6 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
 import { NewCollabDialog } from "./dnd/new-collab-dialog"
 
 export function NavMain({
