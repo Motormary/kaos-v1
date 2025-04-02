@@ -33,7 +33,7 @@ export function LoginForm({
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="example@kaos.com" {...field} />
+                <Input autoFocus placeholder="example@kaos.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
