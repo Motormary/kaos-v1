@@ -1,6 +1,6 @@
 import { DB_Column, DB_Item } from "@/supabase/types"
 import { arrayMove } from "@dnd-kit/sortable"
-import { ColumnProps, MessageProps } from "./types"
+import { MessageProps } from "./types"
 
 export function addToCol(
   col: DB_Column & { items: DB_Item[] },

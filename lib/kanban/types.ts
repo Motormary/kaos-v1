@@ -43,10 +43,14 @@ export type MessageProps = {
     }
     connect?: {
       user: string
+      collab_id: string
       connectedAt: Date
+      token: string
     }
     disconnect?: {
+      collab_id: string
       user: string
+      token: string
     }
     move?: {
       user: string

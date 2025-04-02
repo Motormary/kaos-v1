@@ -9,11 +9,19 @@ type props = {
 export default async function Collab({ params }: props) {
   const collab_id = (await params).collab_id
   const supabase = await createClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
+  // todo: SUBSCRIBE
   const { data: users, error: userError } = await supabase
     .from("collab_users")
-    .select("username")
-    .match({ collab_id })
+    .select("username, user_id")
+    .match({
+      collab_id,
+      connection_status: "connected",
+    })
+    .neq("user_id", session?.user.id)
     .overrideTypes<DB_User[]>()
 
   const { data: columns, error: colError } = await supabase

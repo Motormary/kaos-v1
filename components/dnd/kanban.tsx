@@ -1,6 +1,6 @@
 "use client"
 
-import { ItemProps, MessageProps } from "@/lib/kanban/types"
+import { MessageProps } from "@/lib/kanban/types"
 import useBroadCast from "@/lib/kanban/use-broadcast"
 import { addToCol, removeFromCol, reorderItems } from "@/lib/kanban/utils"
 import { cn } from "@/lib/utils"
@@ -42,7 +42,7 @@ type props = {
 
 type ColumnState = Array<DB_Column & { items: DB_Item[] }>
 
-export default function KanbanBoard({ columns, items }: props) {
+export default function KanbanBoard({ columns, items, users }: props) {
   const [cols, setCols] = useState<ColumnState>(
     columns.map((col) => ({
       ...col,
@@ -147,7 +147,6 @@ export default function KanbanBoard({ columns, items }: props) {
 
   const colCount = cols?.length ? cols.length : 1
   const {
-    users,
     broadcastDrag,
     broadcastOperator,
     cancelDragBroadcast,
@@ -453,15 +452,15 @@ export default function KanbanBoard({ columns, items }: props) {
 
       {/* Remote client cursors */}
       {connectionStatus === "connected" && users?.length
-        ? users.map((user, index) => (
+        ? users.map((user) => (
             <div
-              key={`${user}-${index}`}
-              id={user}
+              key={user.user_id}
+              id={user.user_id}
               className="pointer-events-none absolute z-50 w-fit"
             >
               <MousePointer2 className="fill-emerald-300 stroke-emerald-900" />{" "}
               <div className="w-full translate-x-5 translate-y-[-0.25rem] rounded-sm border bg-emerald-200 px-1 py-0.5 text-xs whitespace-nowrap text-black">
-                {user}
+                {user.username}
               </div>
             </div>
           ))

@@ -2,8 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 
 export default async function Home() {
-  const client = await createClient()
-  const auth = await client.auth.getUser()
+  const supabase = await createClient()
+  const auth = await supabase.auth.getUser()
   if (auth.error) return redirect("/login")
 
   return (

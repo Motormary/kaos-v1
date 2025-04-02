@@ -10,26 +10,48 @@ import {
   moveRemoteOperator,
   startDragRemoteOperator,
 } from "./utils"
+import { createClient } from "../supabase/client"
+import { useParams } from "next/navigation"
 
-const myname = `master-${(1 + Math.random()).toFixed(3)}`
-const socket = new WebSocket(
-  `ws://192.168.10.132:8000?user=${myname}`,
-)
+// const socket = new WebSocket(`ws://192.168.10.132:8000`)
+
+async function initiateWs() {
+  console.log("Initiating websocket")
+  const supabase = createClient()
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession()
+
+  if (error) {
+    throw new Error("Error fetching session", error)
+  }
+  return new WebSocket(`ws://192.168.10.132:8000?user=${session?.user.id}`)
+}
 
 export default function useBroadCast(
   setCols: (data: MessageProps["message"]["drop"]) => void,
   handleActiveRemote: (id: number, action: "add" | "remove") => void,
 ) {
-  const ws = useRef<WebSocket | null>(socket)
+  const currentUser = useRef<string>(`guest-${Math.round(Math.random() * 100)}`)
+  const params = useParams()
+  const ws = useRef<WebSocket | null>(null)
   const { open, isMobile } = useSidebar()
   const sidebarOffsetX = isMobile ? 256 : open ? 0 : 208
   const isJackedIn = useRef<boolean>(false)
-  const [users, setUsers] = useState<string[]>([])
   const [connectionStatus, setConnectionStatus] = useState<
     "pending" | "connected" | "closing" | "disconnected"
   >("disconnected")
   const scrollRef = useRef<HTMLElement | null>(null)
   const manualDisconnect = useRef<boolean>(false)
+
+  useEffect(() => {
+    if (ws.current) return
+    async function start() {
+      ws.current = await initiateWs()
+    }
+    start()
+  }, [])
 
   const reportError = throttle(
     () => console.warn("Message not sent, not connected to websocket."),
@@ -85,8 +107,9 @@ export default function useBroadCast(
     }
   }, [connectionStatus, ws])
 
-  const connectOperator = useCallback(() => {
+  async function connectOperator() {
     isJackedIn.current = true
+
     manualDisconnect.current = false
     // Check for connection
     if (
@@ -96,58 +119,88 @@ export default function useBroadCast(
     ) {
       console.info("Creating new WS connection")
 
-      ws.current = new WebSocket(
-        `ws://192.168.10.132:8000?user=${myname}`,
-      )
+      ws.current = await initiateWs()
+
+      ws.current.onopen = async () => {
+        console.log("NEW CONNECTION OPEN")
+        const supabase = createClient()
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
+        if (!session?.access_token) {
+          ws.current?.close()
+          console.error("Error passing auth to websocket", error)
+          return
+        }
+        ws?.current?.send(
+          JSON.stringify({
+            type: "connect",
+            connect: {
+              user: session.user.id,
+              collab_id: params.collab_id,
+              connectedAt: new Date(),
+              token: session.access_token,
+            },
+          }),
+        )
+      }
+      checkAndSetStatus()
 
       // Force a rerender of users to reset the ws.onmessage
-      setUsers((prev) => prev.map((user) => user))
+      // setUsers((prev) => prev.map((user) => user))
     }
-    setTimeout(() => {
-      msg({
-        type: "connect",
-        connect: {
-          user: myname,
-          connectedAt: new Date(),
-        },
-      })
-    }, 1000)
-  }, [connectionStatus, msg])
+  }
 
-  const disconnectOperator = useCallback(() => {
+  async function disconnectOperator() {
     if (ws.current === null) return
+    const supabase = createClient()
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession()
+    if (!session?.access_token) {
+      ws.current?.close()
+      console.error("Error passing auth to websocket", error)
+      return
+    }
+    msg({
+      type: "disconnect",
+      disconnect: {
+        user: currentUser.current,
+        collab_id: params?.collab_id as string,
+        token: session.access_token,
+      },
+    })
     manualDisconnect.current = true
     // Backend will tell all the connected clients to remove current user from their workspace.
-    ws.current.close()
-    setUsers([])
+    // ws.current.close()
+    // setUsers([])
     checkAndSetStatus()
     isJackedIn.current = false
-  }, [checkAndSetStatus, ws])
+  }
 
-  const broadcastOperator = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      if (!isJackedIn.current && !manualDisconnect.current) {
-        connectOperator()
-      }
-      const containerEl = document.getElementById(scrollRef.current?.id ?? "")
-      const dndEl = document.querySelector("div.dnd-container")
-      const scrollXContainer = document.querySelector("div.dnd-columns")
-      const dndRect = dndEl?.getBoundingClientRect()
-      const viewPortEl = containerEl?.children.item(1)
+  function broadcastOperator(event: React.PointerEvent<HTMLDivElement>) {
+    if (!isJackedIn.current && !manualDisconnect.current) {
+      connectOperator()
+    }
+    const containerEl = document.getElementById(scrollRef.current?.id ?? "")
+    const dndEl = document.querySelector("div.dnd-container")
+    const scrollXContainer = document.querySelector("div.dnd-columns")
+    const dndRect = dndEl?.getBoundingClientRect()
+    const viewPortEl = containerEl?.children.item(1)
 
-      msg({
-        type: "move",
-        move: { user: myname, overCol: scrollRef.current?.id },
-        x:
-          event.clientX + // cursor position inside dnd-container (container is relative)
-          (viewPortEl?.scrollLeft ?? 0) +
-          (scrollXContainer?.scrollLeft ?? 0) - // adjust for scrollable containers scroll position (this is just a failsafe, they should not be able to scroll X)
-          (dndRect?.left ?? 0), // adjust for dnd-containers offset
-        y: event.clientY + (viewPortEl?.scrollTop ?? 0) - (dndRect?.top ?? 0),
-      })
-    },
-    [msg, connectOperator],
-  )
+    msg({
+      type: "move",
+      move: { user: currentUser.current, overCol: scrollRef.current?.id },
+      x:
+        event.clientX + // cursor position inside dnd-container (container is relative)
+        (viewPortEl?.scrollLeft ?? 0) +
+        (scrollXContainer?.scrollLeft ?? 0) - // adjust for scrollable containers scroll position (this is just a failsafe, they should not be able to scroll X)
+        (dndRect?.left ?? 0), // adjust for dnd-containers offset
+      y: event.clientY + (viewPortEl?.scrollTop ?? 0) - (dndRect?.top ?? 0),
+    })
+  }
 
   function broadcastDrag(event: DragMoveEvent) {
     const containerEl = document.getElementById(scrollRef.current?.id ?? "")
@@ -233,44 +286,33 @@ export default function useBroadCast(
     const handleWebsocketMsg = (event: MessageEvent) => {
       const {
         remoteClient,
-        message: {
-          type,
-          currentUsers,
-          start,
-          drag,
-          drop,
-          cancel,
-          move,
-          sort,
-          x,
-          y,
-        },
+        message: { type, start, drag, drop, cancel, move, sort, x, y },
       }: MessageProps = JSON.parse(event.data)
 
       // Check if remote client is already connected
-      const isConnected = users?.some(
+      /*  const isConnected = users?.some(
         (user) => user?.toLowerCase() === remoteClient.toLowerCase(),
-      )
+      ) */
 
       // this a response received by the backend when the user successfully connects to a new socket containing currently connected users.
-      if (type === "connected" && currentUsers?.length) {
+      /* if (type === "connected" && currentUsers?.length) {
         setUsers(currentUsers as string[])
-      }
+      } */
 
-      if (type === "connect") {
+      /*  if (type === "connect") {
         if (isConnected) {
           return
         }
         console.info("Connecting user:", remoteClient)
         setUsers((prev) => [...prev, remoteClient])
-      }
+      } */
 
-      if (type === "disconnect") {
+      /*  if (type === "disconnect") {
         if (isConnected) {
           console.info("disconnecting user:", remoteClient)
           setUsers((prev) => prev.filter((user) => user !== remoteClient))
         }
-      }
+      } */
 
       if (type === "sort") {
         setCols(sort)
@@ -302,15 +344,49 @@ export default function useBroadCast(
     }
 
     ws.current.onmessage = handleWebsocketMsg
+    ws.current.onopen = async () => {
+      console.log("CONNECTION OPEN")
+      const supabase = createClient()
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        ws.current?.close()
+        console.error("Error passing auth to websocket", error)
+        return
+      }
+      const username = await (
+        await supabase.auth.getUser()
+      ).data.user?.user_metadata.display_name
+      currentUser.current = username
+      ws?.current?.send(
+        JSON.stringify({
+          type: "connect",
+          connect: {
+            user: session.user.id,
+            collab_id: params.collab_id,
+            connectedAt: new Date(),
+            token: session.access_token,
+          },
+        }),
+      )
+      // ws.current?.send(session.access_token)
+    }
 
     checkAndSetStatus()
 
     return () => {}
-  }, [users, setCols, checkAndSetStatus, ws, sidebarOffsetX, handleActiveRemote])
+  }, [
+    setCols,
+    checkAndSetStatus,
+    ws,
+    sidebarOffsetX,
+    handleActiveRemote,
+    params,
+  ])
 
   return {
-    users, // users in group
-    setUsers,
     connectionStatus, // websocket status
     connectOperator, // Connect to websocket
     disconnectOperator,

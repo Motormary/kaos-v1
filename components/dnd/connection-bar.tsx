@@ -10,10 +10,11 @@ import {
 } from "lucide-react"
 import { Button } from "../ui/button"
 import { memo } from "react"
+import { DB_User } from "@/supabase/types"
 
 type connectionProps = {
   connectionStatus: string
-  users: string[]
+  users: DB_User[]
   colCount: number
   connectOperator: () => void
   disconnectOperator: () => void
