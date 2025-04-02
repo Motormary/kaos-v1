@@ -18,7 +18,7 @@ const socket = new WebSocket(
 
 export default function useBroadCast(
   setCols: (data: MessageProps["message"]["drop"]) => void,
-  handleActiveRemote: (id: string, action: "add" | "remove") => void,
+  handleActiveRemote: (id: number, action: "add" | "remove") => void,
 ) {
   const ws = useRef<WebSocket | null>(socket)
   const { open, isMobile } = useSidebar()
@@ -168,8 +168,8 @@ export default function useBroadCast(
     msg({
       type: "drag",
       drag: {
-        itemId: event?.active?.id as string,
-        overCol: scrollRef.current?.id ?? "",
+        itemId: event?.active?.id as number,
+        overCol: scrollRef?.current?.id ?? "",
       },
       x: offsetX,
       y: offsetY,
@@ -181,7 +181,7 @@ export default function useBroadCast(
         type: "cancel",
         overCol: event.over?.data.current?.col,
         cancel: {
-          itemId: event.active.id as string,
+          itemId: event.active.id as number,
         },
       })
     },
@@ -206,7 +206,7 @@ export default function useBroadCast(
         type: "start",
         overCol: event.active.data.current?.col,
         start: {
-          itemId: event.active.id as string,
+          itemId: event.active.id as number,
         },
       })
     },
@@ -281,7 +281,7 @@ export default function useBroadCast(
       }
 
       if (type === "start") {
-        handleActiveRemote(start?.itemId as string, "add")
+        handleActiveRemote(start?.itemId as number, "add")
         startDragRemoteOperator(start)
       }
       if (type === "drag") {
@@ -290,12 +290,12 @@ export default function useBroadCast(
       }
       if (type === "cancel") {
         console.info("cancel")
-        handleActiveRemote(cancel?.itemId as string, "remove")
+        handleActiveRemote(cancel?.itemId as number, "remove")
         cancelRemoteOperator(cancel)
       }
       if (type === "drop") {
         console.info("drop")
-        handleActiveRemote(drop?.itemId as string, "remove")
+        handleActiveRemote(drop?.itemId as number, "remove")
         dropRemoteOperator(drop, setCols)
         // deployAgent()
       }

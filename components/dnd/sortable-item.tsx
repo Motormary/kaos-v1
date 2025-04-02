@@ -1,5 +1,5 @@
-import { ItemProps } from "@/lib/kanban/types"
 import { cn } from "@/lib/utils"
+import { DB_Item } from "@/supabase/types"
 import {
   AnimateLayoutChanges,
   defaultAnimateLayoutChanges,
@@ -16,7 +16,7 @@ const Draggable = ({
   index,
   colIndex,
 }: {
-  data: ItemProps
+  data: DB_Item
   children?: React.ReactNode
   className?: string
   index?: number
@@ -27,7 +27,7 @@ const Draggable = ({
 
   const { active, attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
-      id: data.id,
+      id: data.item_id,
       data: {
         ...data,
         index,
@@ -43,7 +43,7 @@ const Draggable = ({
 
   return (
     <Item
-      id={data.id}
+      id={`${data.item_id}`}
       ref={setNodeRef}
       {...attributes}
       {...listeners}
@@ -53,8 +53,8 @@ const Draggable = ({
       aria-describedby={`DndDescribeBy-${index}`}
       className={cn(
         className,
-        active?.id === data.id && "animate-fade-half opacity-50",
-        active?.id !== data.id &&
+        active?.id === data.item_id && "animate-fade-half opacity-50",
+        active?.id !== data.item_id &&
           "ring-offset-background ring-primary/40 outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
       )}
     >

@@ -1,9 +1,10 @@
 "use client"
 
-import { initialColumns } from "@/lib/kanban/data"
-import { ColumnProps, ItemProps, MessageProps } from "@/lib/kanban/types"
+import { ItemProps, MessageProps } from "@/lib/kanban/types"
 import useBroadCast from "@/lib/kanban/use-broadcast"
 import { addToCol, removeFromCol, reorderItems } from "@/lib/kanban/utils"
+import { cn } from "@/lib/utils"
+import { DB_Column, DB_Item, DB_User } from "@/supabase/types"
 import {
   defaultDropAnimationSideEffects,
   DndContext,
@@ -25,7 +26,6 @@ import ConnectionBar from "./connection-bar"
 import DropContainer from "./drop-container"
 import Item from "./item"
 import SortableItem from "./sortable-item"
-import { cn } from "@/lib/utils"
 /* 
 todo: barrel imports
 todo: offline storage for owner
@@ -34,12 +34,25 @@ todo: add throttle... again (Get around the compiler .current @ render)
 todo: fix/bundle types/params for functions
  */
 
-export default function KanbanBoard() {
-  const [cols, setCols] = useState<ColumnProps[]>(initialColumns)
-  const [activeItem, setActiveItem] = useState<ItemProps | null>(null)
+type props = {
+  columns: DB_Column[]
+  items: DB_Item[]
+  users: DB_User[]
+}
+
+type ColumnState = Array<DB_Column & { items: DB_Item[] }>
+
+export default function KanbanBoard({ columns, items }: props) {
+  const [cols, setCols] = useState<ColumnState>(
+    columns.map((col) => ({
+      ...col,
+      items: items.filter((item) => item.column_id === col.column_id),
+    })),
+  )
+  const [activeItem, setActiveItem] = useState<DB_Item | null>(null)
   const sourceCol = useRef<string | null>(null)
-  const sourceItem = useRef<ItemProps | null>(null)
-  const [activeRemoteItemIds, setActiveRemoteItemIds] = useState<string[]>([])
+  const sourceItem = useRef<DB_Item | null>(null)
+  const [activeRemoteItemIds, setActiveRemoteItemIds] = useState<number[]>([])
 
   /* const handleAddItem = useCallback((data: MessageProps['message']['drop']) => {
     setCols(prev => prev.map(col => {
@@ -51,7 +64,7 @@ export default function KanbanBoard() {
   }, []) */
 
   const handleActiveRemote = useCallback(
-    (id: string, action: "add" | "remove") => {
+    (id: number, action: "add" | "remove") => {
       if (action === "add") {
         const newItems = [...activeRemoteItemIds, id]
         setActiveRemoteItemIds(newItems)
@@ -67,18 +80,18 @@ export default function KanbanBoard() {
   )
 
   function handleRemoteStateChange(data: MessageProps["message"]["drop"]) {
-    const localItem: ItemProps = cols.reduce((acc, col) => {
-      const isItem = col.items.find((item) => item.id === data?.itemId)
+    const localItem: DB_Item = cols.reduce((acc, col) => {
+      const isItem = col.items.find((item) => item.item_id === data?.itemId)
       if (isItem) acc = isItem
       return acc
-    }, {} as ItemProps)
+    }, {} as DB_Item)
 
-    if (data?.newCol === localItem.col) {
+    if (data?.newCol === localItem.column_id) {
       if (typeof data.newIndex === "number") {
         // Reorder items
         setCols((prev) =>
           prev.map((col) => {
-            if (col.id === localItem.col) {
+            if (col.column_id === localItem.column_id) {
               return {
                 ...col,
                 items: reorderItems(
@@ -94,9 +107,9 @@ export default function KanbanBoard() {
         // Add to end of column
         setCols((prev) =>
           prev.map((col) => {
-            if (col.id === data.newCol) {
+            if (col.column_id === data.newCol) {
               const filteredItems = [
-                ...col.items.filter((item) => item.id !== data.itemId),
+                ...col.items.filter((item) => item.item_id !== data.itemId),
                 localItem,
               ]
               const newItems = filteredItems.map((i, index) => ({
@@ -114,10 +127,10 @@ export default function KanbanBoard() {
       }
     }
 
-    if (data?.newCol !== localItem.col) {
+    if (data?.newCol !== localItem.column_id) {
       setCols((prev) =>
         prev.map((col) => {
-          if (col.id === data?.newCol) {
+          if (col.column_id === data?.newCol) {
             const newCol = addToCol(col, localItem)
             return {
               ...newCol,
@@ -126,7 +139,7 @@ export default function KanbanBoard() {
                   ? reorderItems(newCol.items, col.items.length, data.newIndex)
                   : newCol.items,
             }
-          } else return removeFromCol(col, data?.itemId as string)
+          } else return removeFromCol(col, data?.itemId as number)
         }),
       )
     }
@@ -149,29 +162,29 @@ export default function KanbanBoard() {
 
   function handleDragOver(e: DragOverEvent) {
     if (!e.over?.data?.current || !activeItem) return
-    const sourceColId = activeItem.col
+    const sourceColId = activeItem.column_id
     const targetColId = e.over.data.current.col
-    const over = e.over.data.current as ItemProps & { type: "item" | "drop" }
+    const over = e.over.data.current as DB_Item & { type: "item" | "drop" }
 
     /**
      * If hovered column is not the source-column, add the dragged item to hovered column and remove it from previous
      */
     if (targetColId !== sourceColId) {
       const newCols = cols.map((col) => {
-        if (col.id === over.col) {
+        if (col.column_id === over.column_id) {
           const newItem = { ...activeItem }
           newItem.index = col.items.length
-          newItem.col = col.id
+          newItem.column_id = col.column_id
           setActiveItem(newItem)
           //todo: add item to remote clients
           broadcastSort({
-            itemId: newItem.id,
-            newCol: newItem.col,
+            itemId: newItem.item_id,
+            newCol: newItem.column_id,
             newIndex: over.type === "item" ? over.index : newItem.index,
           })
           return addToCol(col, activeItem)
         } else {
-          return removeFromCol(col, activeItem.id)
+          return removeFromCol(col, activeItem.item_id)
         }
       })
       setCols(newCols)
@@ -180,20 +193,22 @@ export default function KanbanBoard() {
         // this simply makes it possible to drag and drop at the bottom of the container
         setCols((prev) =>
           prev.map((col) => {
-            if (col.id === activeItem.col) {
+            if (col.column_id === activeItem.column_id) {
               const newItems = [
-                ...col.items.filter((item) => item.id !== activeItem.id),
+                ...col.items.filter(
+                  (item) => item.item_id !== activeItem.item_id,
+                ),
               ]
               newItems.push(activeItem)
               const updatedItems = newItems.map((item, index) => {
-                if (item.id === activeItem.id) {
+                if (item.item_id === activeItem.item_id) {
                   setActiveItem({
                     ...item,
                     index,
                   })
                   broadcastSort({
-                    itemId: activeItem.id,
-                    newCol: over.col,
+                    itemId: activeItem.item_id,
+                    newCol: over.column_id,
                     newIndex: index,
                   })
                 }
@@ -211,24 +226,24 @@ export default function KanbanBoard() {
         )
       } else if (over.type === "item") {
         broadcastSort({
-          itemId: activeItem.id,
-          newCol: over.col,
+          itemId: activeItem.item_id,
+          newCol: over.column_id,
           newIndex: over.index,
         })
       }
     }
-    if (over) setOverRef(document.getElementById(over?.col) ?? null) // dependency of remote animation @ useBroadcast.ts
+    if (over) setOverRef(document.getElementById(`${over?.column_id}`) ?? null) // dependency of remote animation @ useBroadcast.ts
   }
 
   function handleDragStart(event: DragStartEvent) {
     startBroadcast(event) // Will connect user to websocket on dragStart (dev purposes)
     sourceCol.current = event.active.data?.current?.col // Source of initiated drag event
-    sourceItem.current = event.active.data.current as ItemProps
-    setActiveItem(event.active.data.current as ItemProps) // Currently dragged item
+    sourceItem.current = event.active.data.current as DB_Item
+    setActiveItem(event.active.data.current as DB_Item) // Currently dragged item
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    const over = event?.over?.data.current as ItemProps & {
+    const over = event?.over?.data.current as DB_Item & {
       type: "item" | "drop"
     }
 
@@ -250,7 +265,7 @@ export default function KanbanBoard() {
      */
     if (isOverItem) {
       const newCols = cols.map((col) => {
-        if (col.id === over?.col) {
+        if (col.column_id === over?.column_id) {
           return {
             ...col,
             items: reorderItems(
@@ -264,8 +279,8 @@ export default function KanbanBoard() {
       })
 
       endDragBroadcast(event, {
-        itemId: activeItem?.id as string,
-        newCol: activeItem?.col as string,
+        itemId: activeItem?.item_id as number,
+        newCol: activeItem?.column_id as number,
         newIndex: over.index as number,
       })
       setCols(newCols)
@@ -280,8 +295,8 @@ export default function KanbanBoard() {
      * Item has been added to end of new column (locally with handleDragOver), update remote clients.
      */
     endDragBroadcast(event, {
-      itemId: activeItem?.id as string,
-      newCol: activeItem?.col as string,
+      itemId: activeItem?.item_id as number,
+      newCol: activeItem?.column_id as number,
       newIndex: over.index as number,
     })
     setActiveItem(null)
@@ -308,9 +323,9 @@ export default function KanbanBoard() {
   const mouseSensor = useSensor(MouseSensor)
   const sensors = useSensors(keyboardSensor, mouseSensor, touchSensor)
 
-  function handleAddItem(columnId: string) {
+  function handleAddItem(columnId: number) {
     const newCols = cols.map((col) => {
-      if (col.id === columnId) {
+      if (col.column_id === columnId) {
         const newItem = {
           id: Math.random().toString(),
           index: col.items.length,
@@ -334,13 +349,13 @@ export default function KanbanBoard() {
         newCol: col.id,
         newIndex: col.items.length,
       }) */
-    setCols(newCols)
+    // setCols(newCols)
   }
 
   function handleCancel(e: DragCancelEvent) {
     endDragBroadcast(e, {
-      itemId: activeItem?.id as string,
-      newCol: activeItem?.col as string,
+      itemId: activeItem?.item_id as number,
+      newCol: activeItem?.column_id as number,
       newIndex: activeItem?.index,
     })
   }
@@ -368,23 +383,29 @@ export default function KanbanBoard() {
         <div className="dnd-columns flex overflow-x-auto">
           {cols.map((col, colIndex) => {
             return (
-              <SortableContext key={col.id} items={col.items}>
+              <SortableContext
+                key={`column-${col.column_id}`}
+                items={col.items.map((item) => ({ id: item.item_id }))}
+              >
                 <DropContainer
                   setOverRef={setOverRef}
-                  handleAddItem={handleAddItem}
+                  // handleAddItem={handleAddItem}
                   onPointerEnter={(e) => setOverRef(e.currentTarget)}
                   index={colIndex}
                   data={col}
-                  value={col.items.reduce((acc, item) => acc + item.value, 0)}
+                  value={col.items.reduce(
+                    (acc, item) => acc + (item.value ?? 0),
+                    0,
+                  )}
                 >
                   {col.items.map((item, index) => (
                     <SortableItem
                       className={cn(
                         activeRemoteItemIds.some(
-                          (remoteItem) => remoteItem === item.id,
+                          (remoteItem) => remoteItem === item.item_id,
                         ) && "pointer-events-none opacity-50",
                       )}
-                      key={item.id + index}
+                      key={`item-${item.item_id}`}
                       colIndex={colIndex}
                       index={index}
                       data={item}

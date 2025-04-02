@@ -1,3 +1,5 @@
+import { DB_Column, DB_Item } from "@/supabase/types"
+
 export type ItemProps = {
   id: string
   index: number
@@ -30,14 +32,14 @@ export type MessageProps = {
       | "sort"
     x?: number
     y?: number
-    newState?: ColumnProps[]
+    newState?: Array<DB_Column & {items: DB_Item[]}>
     currentUsers?: string[]
     overCol?: string
     scroll?: {
       user: string
       y: number
       x?: number
-      containerId: string
+      containerId: number
     }
     connect?: {
       user: string
@@ -51,25 +53,25 @@ export type MessageProps = {
       overCol: string | undefined
     }
     drag?: {
-      overCol: string
-      itemId: string
+      overCol: string | null
+      itemId: number
     }
     sort?: {
-      itemId: string
-      newCol: string
+      itemId: number
+      newCol: number
       newIndex: number
     }
-    add?: ItemProps
+    add?: DB_Item
     drop?: {
-      itemId: string
-      newCol: string
+      itemId: number
+      newCol: number
       newIndex?: number
     }
     cancel?: {
-      itemId: string
+      itemId: number
     }
     start?: {
-      itemId: string
+      itemId: number
     }
   }
 }

@@ -1,12 +1,12 @@
 "use client"
-import { ItemProps } from "@/lib/kanban/types"
 import { cn } from "@/lib/utils"
+import { DB_Item } from "@/supabase/types"
 import * as lucide from "lucide-react"
 import { forwardRef, memo } from "react"
 import { Badge } from "../ui/badge"
 
 interface sortableItemProps extends React.HTMLAttributes<HTMLLIElement> {
-  data: ItemProps
+  data: DB_Item
   active?: boolean
 }
 
@@ -19,7 +19,7 @@ const Item = forwardRef<HTMLLIElement, sortableItemProps>(
     return (
       <li
         {...props}
-        id={data.id}
+        id={`${data.item_id}`}
         ref={ref}
         aria-describedby={`DndDescribeBy-${data.index}`}
         className={cn(

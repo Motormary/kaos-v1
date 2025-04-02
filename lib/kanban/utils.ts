@@ -1,10 +1,11 @@
+import { DB_Column, DB_Item } from "@/supabase/types"
 import { arrayMove } from "@dnd-kit/sortable"
-import { ColumnProps, ItemProps, MessageProps } from "./types"
+import { ColumnProps, MessageProps } from "./types"
 
 export function addToCol(
-  col: ColumnProps,
-  item: ItemProps | null,
-): ColumnProps {
+  col: DB_Column & { items: DB_Item[] },
+  item: DB_Item | null,
+): DB_Column & { items: DB_Item[] } {
   if (!item || !col) {
     throw new Error("Error adding item to column, params missing")
   }
@@ -13,20 +14,23 @@ export function addToCol(
     ...col,
     items: [
       ...col.items,
-      { ...item, col: col.id, index: col.items.length } as ItemProps,
+      { ...item, column_id: col.column_id, index: col.items.length } as DB_Item,
     ],
   }
 }
 
-export function removeFromCol(col: ColumnProps, activeId: string): ColumnProps {
-  if (typeof activeId !== "string" || !col) {
+export function removeFromCol(
+  col: DB_Column & { items: DB_Item[] },
+  activeId: number,
+): DB_Column & { items: DB_Item[] } {
+  if (typeof activeId !== "number" || !col) {
     throw new Error("Error removing item from column, params missing")
   }
 
   const filteredCol = {
     ...col,
     items: col.items
-      .filter((item) => item.id !== activeId)
+      .filter((item) => item.item_id !== activeId)
       .map((item, index) => ({ ...item, index })),
   }
 
@@ -34,10 +38,10 @@ export function removeFromCol(col: ColumnProps, activeId: string): ColumnProps {
 }
 
 export function reorderItems(
-  items: ItemProps[],
+  items: DB_Item[],
   activeIndex: number,
   overIndex: number,
-): ItemProps[] {
+): DB_Item[] {
   if (
     !items?.length ||
     typeof activeIndex !== "number" ||
@@ -50,7 +54,7 @@ export function reorderItems(
 
   const updatedArray = sortedArray.map((item, index) => ({
     ...item,
-    index, // Assign new index
+    index,
   }))
 
   return updatedArray
@@ -83,7 +87,7 @@ export function startDragRemoteOperator(
   start: MessageProps["message"]["start"],
 ) {
   console.info("start")
-  const dragEl = document.getElementById(start?.itemId as string)
+  const dragEl = document.getElementById(`${start?.itemId}`)
   if (!dragEl) return
   const rect = dragEl.getBoundingClientRect()
   const clone = dragEl.cloneNode(true) as HTMLElement
@@ -111,7 +115,7 @@ export function dragRemoteOperator(
   sidebarOffset: number,
 ) {
   const cloneEl = document.getElementById(`${drag?.itemId}-clone`)
-  const dragEl = document.getElementById(drag?.itemId as string)
+  const dragEl = document.getElementById(`${drag?.itemId}`)
   const dndContainer = document.querySelector("div.dnd-container")
   const dndRect = dndContainer?.getBoundingClientRect()
   const scrollXContainer = document.querySelector("div.dnd-columns")
@@ -131,7 +135,7 @@ export function dragRemoteOperator(
 export function cancelRemoteOperator(
   cancel: MessageProps["message"]["cancel"],
 ) {
-  const dragEl = document.getElementById(cancel?.itemId as string)
+  const dragEl = document.getElementById(`${cancel?.itemId}`)
   const cloneEl = document.getElementById(`${cancel?.itemId}-clone`)
   const dndContainer = document.querySelector("div.dnd-container")
   const dndRect = dndContainer?.getBoundingClientRect()
@@ -154,7 +158,7 @@ export function dropRemoteOperator(
   drop: MessageProps["message"]["drop"],
   setCols: (data: MessageProps["message"]["drop"]) => void,
 ) {
-  const dragEl = document.getElementById(drop?.itemId as string)
+  const dragEl = document.getElementById(`${drop?.itemId}`)
   const cloneEl = document.getElementById(`${drop?.itemId}-clone`)
   const dndContainer = document.querySelector("div.dnd-container")
   const dndRect = dndContainer?.getBoundingClientRect()
@@ -169,8 +173,8 @@ export function dropRemoteOperator(
 
   setTimeout(() => {
     if (cloneEl) {
-      const newEl = document.getElementById(drop?.itemId as string)
-      const containerEL = document.getElementById(drop?.newCol as string)
+      const newEl = document.getElementById(`${drop?.itemId}`)
+      const containerEL = document.getElementById(`${drop?.newCol}`)
       if (!newEl || !containerEL) return
       const newRect = newEl.getBoundingClientRect()
       cloneEl.style.transition = "top 200ms ease, left 200ms ease"
