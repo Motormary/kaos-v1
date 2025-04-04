@@ -16,7 +16,7 @@ export default async function Collab({ params }: props) {
   // todo: SUBSCRIBE
   const { data: users, error: userError } = await supabase
     .from("collab_users")
-    .select("username, user_id")
+    .select()
     .match({
       collab_id,
       connection_status: "connected",
@@ -43,7 +43,13 @@ export default async function Collab({ params }: props) {
 
   return (
     <div className="px-4 pt-4 max-sm:pb-16 sm:px-10">
-      <KanbanBoard columns={columns} items={items} users={users} />
+      <KanbanBoard
+        currentUser={session?.user.id as string}
+        collab_id={collab_id}
+        columns={columns}
+        items={items}
+        users={users}
+      />
     </div>
   )
 }

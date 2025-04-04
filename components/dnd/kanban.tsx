@@ -26,6 +26,7 @@ import ConnectionBar from "./connection-bar"
 import DropContainer from "./drop-container"
 import Item from "./item"
 import SortableItem from "./sortable-item"
+import { createClient } from "@/lib/supabase/client"
 /* 
 todo: barrel imports
 todo: offline storage for owner
@@ -38,21 +39,61 @@ type props = {
   columns: DB_Column[]
   items: DB_Item[]
   users: DB_User[]
+  collab_id: string
+  currentUser: string
 }
 
 type ColumnState = Array<DB_Column & { items: DB_Item[] }>
 
-export default function KanbanBoard({ columns, items, users }: props) {
+export default function KanbanBoard({
+  collab_id,
+  columns,
+  items,
+  users,
+  currentUser,
+}: props) {
   const [cols, setCols] = useState<ColumnState>(
     columns.map((col) => ({
       ...col,
       items: items.filter((item) => item.column_id === col.column_id),
     })),
   )
+  const [connectedUsers, setConnectedUsers] = useState<DB_User[]>(users)
   const [activeItem, setActiveItem] = useState<DB_Item | null>(null)
   const sourceCol = useRef<string | null>(null)
   const sourceItem = useRef<DB_Item | null>(null)
   const [activeRemoteItemIds, setActiveRemoteItemIds] = useState<number[]>([])
+
+  const supabase = createClient()
+  const channel = supabase.channel(collab_id)
+
+  channel
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "collab_users",
+        filter: `collab_id=eq.${collab_id}`,
+      },
+      (payload) => {
+        if (payload.new.user_id !== currentUser)
+          updateUsers({ new: payload.new as DB_User })
+      },
+    )
+    .subscribe()
+
+  function updateUsers({ new: newUser }: { new: DB_User }) {
+    const isConnected = connectedUsers.some(
+      (user) => user.user_id === newUser.user_id,
+    )
+    if (!isConnected && newUser.connection_status === "connected")
+      setConnectedUsers([...connectedUsers, newUser])
+    if (isConnected && newUser.connection_status === "disconnected")
+      setConnectedUsers(
+        connectedUsers.filter((user) => user.user_id !== newUser.user_id),
+      )
+  }
 
   /* const handleAddItem = useCallback((data: MessageProps['message']['drop']) => {
     setCols(prev => prev.map(col => {
@@ -368,7 +409,7 @@ export default function KanbanBoard({ columns, items, users }: props) {
         connectOperator={connectOperator}
         connectionStatus={connectionStatus}
         disconnectOperator={disconnectOperator}
-        users={users}
+        users={connectedUsers}
         colCount={colCount}
       />
       <DndContext
@@ -451,8 +492,8 @@ export default function KanbanBoard({ columns, items, users }: props) {
       </DndContext>
 
       {/* Remote client cursors */}
-      {connectionStatus === "connected" && users?.length
-        ? users.map((user) => (
+      {connectionStatus === "connected" && connectedUsers?.length
+        ? connectedUsers.map((user) => (
             <div
               key={user.user_id}
               id={user.user_id}

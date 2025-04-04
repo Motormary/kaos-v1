@@ -184,7 +184,9 @@ export default function useBroadCast(
     if (!isJackedIn.current && !manualDisconnect.current) {
       connectOperator()
     }
-    const containerEl = document.getElementById(scrollRef.current?.id ?? "")
+    const containerEl = scrollRef.current?.id
+      ? document.getElementById(scrollRef.current?.id)
+      : null
     const dndEl = document.querySelector("div.dnd-container")
     const scrollXContainer = document.querySelector("div.dnd-columns")
     const dndRect = dndEl?.getBoundingClientRect()
@@ -203,7 +205,9 @@ export default function useBroadCast(
   }
 
   function broadcastDrag(event: DragMoveEvent) {
-    const containerEl = document.getElementById(scrollRef.current?.id ?? "")
+    const containerEl = scrollRef.current?.id
+      ? document.getElementById(scrollRef.current?.id)
+      : null
     const scrollXContainer = document.querySelector("div.dnd-columns")
     const viewPortEl = containerEl?.children.item(1)
 
@@ -228,57 +232,49 @@ export default function useBroadCast(
       y: offsetY,
     })
   }
-  const cancelDragBroadcast = useCallback(
-    (event: DragCancelEvent) => {
-      msg({
-        type: "cancel",
-        overCol: event.over?.data.current?.col,
-        cancel: {
-          itemId: event.active.id as number,
-        },
-      })
-    },
-    [msg],
-  )
 
-  const endDragBroadcast = useCallback(
-    (event: DragCancelEvent, data: MessageProps["message"]["drop"]) => {
-      msg({
-        type: "drop",
-        overCol: event.over?.data?.current?.col,
-        drop: data,
-      })
-    },
-    [msg],
-  )
+  function cancelDragBroadcast(event: DragCancelEvent) {
+    msg({
+      type: "cancel",
+      overCol: event.over?.data.current?.col,
+      cancel: {
+        itemId: event.active.id as number,
+      },
+    })
+  }
 
-  const startBroadcast = useCallback(
-    (event: DragStartEvent) => {
-      checkAndSetStatus()
-      msg({
-        type: "start",
-        overCol: event.active.data.current?.col,
-        start: {
-          itemId: event.active.id as number,
-        },
-      })
-    },
-    [msg, checkAndSetStatus],
-  )
+  function endDragBroadcast(
+    event: DragCancelEvent,
+    data: MessageProps["message"]["drop"],
+  ) {
+    msg({
+      type: "drop",
+      overCol: event.over?.data?.current?.col,
+      drop: data,
+    })
+  }
 
-  const broadcastSort = useCallback(
-    (data: MessageProps["message"]["sort"]) => {
-      msg({
-        type: "sort",
-        sort: data,
-      })
-    },
-    [msg],
-  )
+  function startBroadcast(event: DragStartEvent) {
+    checkAndSetStatus()
+    msg({
+      type: "start",
+      overCol: event.active.data.current?.col,
+      start: {
+        itemId: event.active.id as number,
+      },
+    })
+  }
 
-  const setOverRef = useCallback((event: HTMLElement | null) => {
+  function broadcastSort(data: MessageProps["message"]["sort"]) {
+    msg({
+      type: "sort",
+      sort: data,
+    })
+  }
+
+  function setOverRef(event: HTMLElement | null) {
     scrollRef.current = event
-  }, [])
+  }
 
   useEffect(() => {
     if (!ws.current) return
@@ -373,10 +369,11 @@ export default function useBroadCast(
       )
       // ws.current?.send(session.access_token)
     }
-
+    
     checkAndSetStatus()
-
-    return () => {}
+    
+    return () => {
+    }
   }, [
     setCols,
     checkAndSetStatus,

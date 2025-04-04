@@ -98,18 +98,27 @@ export type Database = {
       collab_users: {
         Row: {
           collab_id: string
+          connection_status:
+            | Database["public"]["Enums"]["connection_status"]
+            | null
           role: string | null
           user_id: string
           username: string
         }
         Insert: {
           collab_id: string
+          connection_status?:
+            | Database["public"]["Enums"]["connection_status"]
+            | null
           role?: string | null
           user_id: string
           username: string
         }
         Update: {
           collab_id?: string
+          connection_status?:
+            | Database["public"]["Enums"]["connection_status"]
+            | null
           role?: string | null
           user_id?: string
           username?: string
@@ -198,7 +207,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      collab_roles: "read" | "write" | "owner"
+      connection_status: "connected" | "disconnected"
     }
     CompositeTypes: {
       [_ in never]: never
