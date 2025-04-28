@@ -1,5 +1,6 @@
 # Kaos pre-alpha
 A live collaboration tool where users can work together remotely.
+
 This codebase follows no best practices or guidelines (except for a bit of react-compiler), and should not be used as an example for anything. It just a bit of chaotic fun.
 
 ![image](https://github.com/user-attachments/assets/f0fff940-b87a-4e05-a79c-1a2bafa1fba9)
