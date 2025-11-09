@@ -184,11 +184,28 @@ export default function KanbanBoard() {
             if (col.id === activeItem.col) {
               const newItems = [
                 ...col.items.filter((item) => item.id !== activeItem.id),
-                activeItem,
               ]
+              newItems.push(activeItem)
+              const updatedItems = newItems.map((item, index) => {
+                if (item.id === activeItem.id) {
+                  setActiveItem({
+                    ...item,
+                    index,
+                  })
+                  broadcastSort({
+                    itemId: activeItem.id,
+                    newCol: over.col,
+                    newIndex: index,
+                  })
+                }
+                return {
+                  ...item,
+                  index,
+                }
+              })
               return {
                 ...col,
-                items: newItems,
+                items: updatedItems,
               }
             } else return col
           }),
@@ -221,7 +238,7 @@ export default function KanbanBoard() {
     /**
      * Cancel drag-event if item has not been moved from source location and/or column
      */
-    if (over?.id === activeItem?.id && sourceCol.current === over?.col) {
+    if (!over) {
       setActiveItem(null)
       sourceCol.current = null
       sourceItem.current = null
